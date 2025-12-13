@@ -1,4 +1,6 @@
+import { Button } from "@/components/ui/button";
 import { ChevronDownIcon } from "@heroicons/react/16/solid";
+import { Link } from "react-router-dom";
 
 export default function Contact() {
   return (
@@ -135,23 +137,20 @@ export default function Contact() {
               className="text-sm/6 text-muted-foreground"
             >
               By selecting this, you agree to our{" "}
-              <a
-                href="#"
+              <Link
+                to="/privacy-policy"
                 className="font-semibold whitespace-nowrap text-primary hover:text-primary/80"
               >
                 privacy policy
-              </a>
+              </Link>
               .
             </label>
           </div>
         </div>
         <div className="mt-10">
-          <button
-            type="submit"
-            className="block w-full rounded-md bg-primary px-3.5 py-2.5 text-center text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-          >
+          <Button type="submit" variant="default" size="lg" className="w-full">
             Send Message
-          </button>
+          </Button>
         </div>
       </form>
     </div>
