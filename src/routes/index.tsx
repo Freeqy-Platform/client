@@ -12,6 +12,7 @@ import ForgotPassword from "../pages/auth/forgot-password";
 import ResetPassword from "../pages/auth/reset-password";
 import VerifyEmail from "../pages/auth/verify-email";
 import AthLayout from "../components/auth/AthLayout";
+import ProfilePage from "@/pages/ProfilePage";
 
 const MainRouter = () => {
   return (
@@ -20,6 +21,8 @@ const MainRouter = () => {
         <Route index element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
+        {/* <Route path="/privacy-policy" element={<PrivacyPolicy />} /> */}
+        {/* <Route path="/terms-of-service" element={<TermsOfService />} /> */}
 
         {/* Protected Routes */}
         <Route
@@ -30,11 +33,18 @@ const MainRouter = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
 
         <Route path="*" element={<NotFound />} />
       </Route>
 
-      {/* Auth Routes (without layout) */}
       <Route
         path="/auth/login"
         element={
@@ -67,11 +77,12 @@ const MainRouter = () => {
           </AthLayout>
         }
       />
+      {/* Support new camelCase reset password link from emails */}
       <Route
-        path="/auth/verify-email"
+        path="/resetPassword"
         element={
           <AthLayout>
-            <VerifyEmail />
+            <ResetPassword />
           </AthLayout>
         }
       />
@@ -84,7 +95,6 @@ const MainRouter = () => {
         }
       />
 
-      {/* Redirect old auth routes to new ones */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />

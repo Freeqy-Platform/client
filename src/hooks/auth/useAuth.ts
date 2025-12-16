@@ -7,6 +7,7 @@ import {
   useResendConfirmationCode,
   useConfirmEmail,
   useLogout,
+  useRevokeRefreshToken,
 } from "./useAuthMutations";
 import type { LoginRequest } from "../../types/api";
 
@@ -23,6 +24,7 @@ export const useAuth = () => {
   const resendConfirmationMutation = useResendConfirmationCode();
   const confirmEmailMutation = useConfirmEmail();
   const logoutFn = useLogout();
+  const revokeRefreshTokenMutation = useRevokeRefreshToken();
 
   // Wrapper for login that updates context
   const login = (
@@ -41,7 +43,8 @@ export const useAuth = () => {
           },
           response.token,
           response.refreshToken,
-          response.expiresIn
+          response.expiresIn,
+          response.refreshTokenExpiryDate
         );
       },
       onError: options?.onError,
@@ -64,6 +67,7 @@ export const useAuth = () => {
     resendConfirmationCode: resendConfirmationMutation.mutate,
     confirmEmail: confirmEmailMutation.mutate,
     logout: logoutFn,
+    revokeRefreshToken: revokeRefreshTokenMutation.mutate,
 
     // Loading states
     isLoginLoading: loginMutation.isPending,

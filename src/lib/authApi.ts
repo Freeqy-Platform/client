@@ -9,13 +9,14 @@ import type {
   ConfirmationEmailRequest,
   RefreshTokenRequest,
   RefreshTokenResponse,
+  RevokeRefreshTokenRequest,
   ValidationError,
 } from "../types/api";
 import { env } from "./env";
 
 // Create axios instance for auth endpoints
 const authClient = axios.create({
-  baseURL: env.API_BASE_URL,
+  baseURL: env.API_BASE_URL + "/v1",
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
@@ -32,10 +33,7 @@ export const authApi = {
    * POST /api/v1/Auth/login
    */
   login: async (data: LoginRequest): Promise<LoginResponse> => {
-    const response = await authClient.post<LoginResponse>(
-      "/Auth/login",
-      data
-    );
+    const response = await authClient.post<LoginResponse>("/Auth/login", data);
     return response.data;
   },
 
@@ -94,6 +92,16 @@ export const authApi = {
     );
     return response.data;
   },
+
+  /**
+   * Revoke refresh token endpoint
+   * POST /api/v1/Auth/revoke-refresh-token
+   */
+  revokeRefreshToken: async (
+    data: RevokeRefreshTokenRequest
+  ): Promise<void> => {
+    await authClient.post("/Auth/revoke-refresh-token", data);
+  },
 };
 
 /**
@@ -117,37 +125,37 @@ export const isValidationError = (
  */
 const isErrorCode = (str: string): boolean => {
   if (!str || typeof str !== "string") return false;
-  
+
   // Error codes are typically:
   // - Contain dots (e.g., "User.InvalidCredentials")
   // - Or are PascalCase without spaces and short
   // - Don't contain lowercase words that indicate it's a message
-  
+
   // If it contains a dot, it's likely a code (e.g., "User.InvalidCredentials")
   if (str.includes(".")) {
     return true;
   }
-  
+
   // Check if it's PascalCase (starts with uppercase, no spaces, short)
   const isPascalCase = /^[A-Z][a-zA-Z]*$/.test(str);
   const isShort = str.length < 30;
-  
+
   // If it's PascalCase and short, it might be a code
   // But exclude if it contains common message words
   if (isPascalCase && isShort) {
     const lowerStr = str.toLowerCase();
     // If it contains message-like words, it's probably a message
-    const hasMessageWords = 
+    const hasMessageWords =
       lowerStr.includes("invalid") ||
       lowerStr.includes("already") ||
       lowerStr.includes("taken") ||
       lowerStr.includes("required") ||
       lowerStr.includes("must") ||
       lowerStr.includes("should");
-    
+
     return !hasMessageWords;
   }
-  
+
   return false;
 };
 
@@ -157,7 +165,7 @@ const isErrorCode = (str: string): boolean => {
 const getDefaultErrorMessage = (errorCode: string): string => {
   // Handle codes with dots (e.g., "User.InvalidCredentials")
   const code = errorCode.includes(".") ? errorCode.split(".").pop() : errorCode;
-  
+
   const defaultMessages: Record<string, string> = {
     DuplicateUserName: "This username is already taken",
     DuplicateEmail: "This email is already registered",
@@ -165,9 +173,12 @@ const getDefaultErrorMessage = (errorCode: string): string => {
     InvalidPassword: "Invalid password",
     PasswordTooShort: "Password is too short",
     PasswordRequiresDigit: "Password must contain at least one digit",
-    PasswordRequiresLower: "Password must contain at least one lowercase letter",
-    PasswordRequiresUpper: "Password must contain at least one uppercase letter",
-    PasswordRequiresNonAlphanumeric: "Password must contain at least one special character",
+    PasswordRequiresLower:
+      "Password must contain at least one lowercase letter",
+    PasswordRequiresUpper:
+      "Password must contain at least one uppercase letter",
+    PasswordRequiresNonAlphanumeric:
+      "Password must contain at least one special character",
     InvalidLogin: "Invalid email or username",
     InvalidCredentials: "Invalid email/password",
     UserNotFound: "User not found",
@@ -186,7 +197,7 @@ const getDefaultErrorMessage = (errorCode: string): string => {
 const mapErrorCodeToField = (errorCode: string): string | null => {
   // Handle codes with dots (e.g., "User.InvalidCredentials")
   const code = errorCode.includes(".") ? errorCode.split(".").pop() : errorCode;
-  
+
   const errorCodeMap: Record<string, string> = {
     DuplicateUserName: "userName",
     DuplicateEmail: "email",
@@ -238,7 +249,9 @@ export const extractErrorMessage = (error: unknown): string => {
         const firstErrorMessages = validationError.errors[firstErrorKey];
         if (firstErrorMessages && firstErrorMessages.length > 0) {
           // Prefer descriptive messages over codes
-          const descriptiveMsg = firstErrorMessages.find((msg) => !isErrorCode(msg));
+          const descriptiveMsg = firstErrorMessages.find(
+            (msg) => !isErrorCode(msg)
+          );
           return descriptiveMsg || firstErrorMessages[0];
         }
       }
@@ -282,26 +295,26 @@ export const extractValidationErrors = (
     // Handle array format errors
     if (Array.isArray(validationError.errors)) {
       const fieldErrors: Record<string, string[]> = {};
-      
+
       // Process errors in pairs: code and message
       // The pattern is typically: [code, message, code, message, ...]
       for (let i = 0; i < validationError.errors.length; i++) {
         const errorItem = validationError.errors[i];
         if (typeof errorItem !== "string") continue;
-        
+
         // Check if this is an error code
         if (isErrorCode(errorItem)) {
           // Try to find the corresponding message (next item in array)
-          const message = 
+          const message =
             i + 1 < validationError.errors.length &&
             typeof validationError.errors[i + 1] === "string" &&
             !isErrorCode(validationError.errors[i + 1])
               ? validationError.errors[i + 1]
               : null;
-          
+
           // Map error code to field name
           const fieldName = mapErrorCodeToField(errorItem);
-          
+
           if (fieldName) {
             // Use the message if available, otherwise use a default
             const errorMessage = message || getDefaultErrorMessage(errorItem);
@@ -313,7 +326,7 @@ export const extractValidationErrors = (
             fieldErrors["root"] = fieldErrors["root"] || [];
             fieldErrors["root"].push(errorMessage);
           }
-          
+
           // Skip the next item if we used it as a message
           if (message) i++;
         } else {
@@ -321,17 +334,23 @@ export const extractValidationErrors = (
           // Try to determine the field from the message content
           const lowerError = errorItem.toLowerCase();
           let fieldName: string | null = null;
-          
-          if (lowerError.includes("username") || lowerError.includes("user name")) {
+
+          if (
+            lowerError.includes("username") ||
+            lowerError.includes("user name")
+          ) {
             fieldName = "userName";
           } else if (lowerError.includes("email")) {
             fieldName = "email";
           } else if (lowerError.includes("password")) {
             fieldName = "password";
-          } else if (lowerError.includes("code") || lowerError.includes("verification")) {
+          } else if (
+            lowerError.includes("code") ||
+            lowerError.includes("verification")
+          ) {
             fieldName = "code";
           }
-          
+
           if (fieldName) {
             fieldErrors[fieldName] = fieldErrors[fieldName] || [];
             fieldErrors[fieldName].push(errorItem);
@@ -341,16 +360,16 @@ export const extractValidationErrors = (
           }
         }
       }
-      
+
       return fieldErrors;
     }
-    
+
     // Handle object format errors
     if (typeof validationError.errors === "object") {
       return validationError.errors as Record<string, string[]>;
     }
   }
-  
+
   return {};
 };
 
@@ -365,4 +384,3 @@ export const extractAllErrorMessages = (error: unknown): string[] => {
   });
   return messages.length > 0 ? messages : [extractErrorMessage(error)];
 };
-

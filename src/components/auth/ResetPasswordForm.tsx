@@ -41,8 +41,9 @@ export const ResetPasswordForm = () => {
   const [searchParams] = useSearchParams();
   const { resetPassword, isResetPasswordLoading } = useAuth();
 
-  const token = searchParams.get("token");
-  const id = searchParams.get("id");
+  // Support both old (id, token) and new (userId, code) query params
+  const id = searchParams.get("userId") || searchParams.get("id");
+  const token = searchParams.get("code") || searchParams.get("token");
 
   const form = useForm<ResetPasswordFormData>({
     resolver: zodResolver(resetPasswordSchema),

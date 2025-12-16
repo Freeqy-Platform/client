@@ -34,6 +34,12 @@ export interface ConfirmationEmailRequest {
 }
 
 export interface RefreshTokenRequest {
+  token: string;
+  refreshToken: string;
+}
+
+export interface RevokeRefreshTokenRequest {
+  token: string;
   refreshToken: string;
 }
 
@@ -46,12 +52,18 @@ export interface LoginResponse {
   token: string;
   refreshToken: string;
   expiresIn: number;
+  refreshTokenExpiryDate: string; // ISO date string
 }
 
 export interface RefreshTokenResponse {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
   token: string;
   refreshToken: string;
   expiresIn: number;
+  refreshTokenExpiryDate: string; // ISO date string
 }
 
 // API Error Types
