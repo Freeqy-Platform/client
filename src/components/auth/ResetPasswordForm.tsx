@@ -5,14 +5,6 @@ import { Link, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { Button } from "../ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "../ui/card";
-import {
   Form,
   FormControl,
   FormField,
@@ -22,6 +14,8 @@ import {
 } from "../ui/form";
 import { Input } from "../ui/input";
 import { useAuth } from "../../hooks/auth/useAuth";
+import { EyeIcon, EyeOffIcon, Lock, ArrowLeft } from "lucide-react";
+import { setFormErrors } from "../../lib/form-error-handler";
 
 const resetPasswordSchema = z
   .object({
@@ -59,132 +53,153 @@ export const ResetPasswordForm = () => {
       return;
     }
 
-    resetPassword({
-      token,
-      id,
-      newPassword: data.newPassword,
-    });
+    form.clearErrors();
+    resetPassword(
+      {
+        token,
+        id,
+        newPassword: data.newPassword,
+      },
+      {
+        onError: (error) => {
+          setFormErrors(error, form.setError);
+        },
+      }
+    );
   };
 
   if (!token || !id) {
     return (
-      <Card className="w-full max-w-md mx-auto">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center text-destructive">
-            Invalid Link
-          </CardTitle>
-          <CardDescription className="text-center">
+      <div className="w-full space-y-6">
+        <div className="space-y-2 text-center">
+          <h1 className="text-3xl font-bold text-destructive">Invalid Link</h1>
+          <p className="text-muted-foreground">
             This password reset link is invalid or has expired.
-          </CardDescription>
-        </CardHeader>
-        <CardFooter>
-          <Link to="/auth/forgot-password" className="w-full">
-            <Button className="w-full bg-[var(--purple)] text-[var(--purple-foreground)] hover:bg-[var(--purple)]/90">
-              Request New Reset Link
-            </Button>
-          </Link>
-        </CardFooter>
-      </Card>
+          </p>
+        </div>
+        <Link to="/forgot-password" className="block">
+          <Button className="w-full bg-[var(--purple)] text-[var(--purple-foreground)] hover:bg-[var(--purple)]/90 h-11 text-base font-semibold">
+            Request New Reset Link
+          </Button>
+        </Link>
+      </div>
     );
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold text-center">
-          Reset Password
-        </CardTitle>
-        <CardDescription className="text-center">
-          Enter your new password below
-        </CardDescription>
-      </CardHeader>
+    <div className="w-full space-y-6">
+      {/* Header */}
+      <div className="space-y-2 text-center">
+        <h1 className="text-3xl font-bold text-foreground">
+          Create new password
+        </h1>
+        <p className="text-muted-foreground">
+          Enter your new password below to secure your account.
+        </p>
+      </div>
+
+      {/* Form */}
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
-            <FormField
-              control={form.control}
-              name="newPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>New Password</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Enter your new password"
-                        {...field}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? "👁️" : "👁️‍🗨️"}
-                      </Button>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="confirmPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirm New Password</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Input
-                        type={showConfirmPassword ? "text" : "password"}
-                        placeholder="Confirm your new password"
-                        {...field}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                        onClick={() =>
-                          setShowConfirmPassword(!showConfirmPassword)
-                        }
-                      >
-                        {showConfirmPassword ? "👁️" : "👁️‍🗨️"}
-                      </Button>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            {form.formState.errors.root && (
-              <div className="text-sm text-destructive">
-                {form.formState.errors.root.message}
-              </div>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="newPassword"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>New Password</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Lock className="absolute right-10 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="At least 8 characters"
+                      className="pr-10"
+                      {...field}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOffIcon className="h-4 w-4" />
+                      ) : (
+                        <EyeIcon className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             )}
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
-            <Button
-              type="submit"
-              className="w-full bg-[var(--purple)] text-[var(--purple-foreground)] hover:bg-[var(--purple)]/90"
-              disabled={isResetPasswordLoading}
-            >
-              {isResetPasswordLoading ? "Resetting..." : "Reset Password"}
-            </Button>
-            <div className="text-center text-sm">
-              Remember your password?{" "}
-              <Link
-                to="/auth/login"
-                className="text-[var(--purple)] hover:underline"
-              >
-                Sign in
-              </Link>
+          />
+
+          <FormField
+            control={form.control}
+            name="confirmPassword"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Confirm New Password</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Lock className="absolute right-10 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="Confirm your new password"
+                      className="pr-10"
+                      {...field}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOffIcon className="h-4 w-4" />
+                      ) : (
+                        <EyeIcon className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {form.formState.errors.root && (
+            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+              {form.formState.errors.root.message}
             </div>
-          </CardFooter>
+          )}
+
+          {/* Submit Button */}
+          <Button
+            type="submit"
+            className="w-full bg-[var(--purple)] text-[var(--purple-foreground)] hover:bg-[var(--purple)]/90 h-11 text-base font-semibold"
+            disabled={isResetPasswordLoading}
+          >
+            {isResetPasswordLoading ? "Resetting..." : "Reset Password"}
+          </Button>
         </form>
       </Form>
-    </Card>
+
+      {/* Back to Login */}
+      <div className="text-center">
+        <Link
+          to="/login"
+          className="inline-flex items-center gap-2 text-sm text-[var(--purple)] hover:underline"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to login
+        </Link>
+      </div>
+    </div>
   );
 };

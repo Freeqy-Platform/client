@@ -4,14 +4,6 @@ import { Link } from "react-router-dom";
 import { z } from "zod";
 import { Button } from "../ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "../ui/card";
-import {
   Form,
   FormControl,
   FormField,
@@ -21,6 +13,8 @@ import {
 } from "../ui/form";
 import { Input } from "../ui/input";
 import { useAuth } from "../../hooks/auth/useAuth";
+import { Mail, ArrowLeft } from "lucide-react";
+import { setFormErrors } from "../../lib/form-error-handler";
 
 const forgotPasswordSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -39,61 +33,81 @@ export const ForgotPasswordForm = () => {
   });
 
   const onSubmit = (data: ForgotPasswordFormData) => {
-    forgotPassword(data);
+    form.clearErrors();
+    forgotPassword(data, {
+      onError: (error) => {
+        setFormErrors(error, form.setError);
+      },
+    });
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold text-center">
-          Forgot Password
-        </CardTitle>
-        <CardDescription className="text-center">
+    <div className="w-full space-y-6">
+      {/* Header */}
+      <div className="space-y-2 text-center">
+        <h1 className="text-3xl font-bold text-foreground">
+          Reset your password
+        </h1>
+        <p className="text-muted-foreground">
           Enter your email address and we'll send you a link to reset your
-          password
-        </CardDescription>
-      </CardHeader>
+          password.
+        </p>
+      </div>
+
+      {/* Form */}
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email address</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       type="email"
-                      placeholder="Enter your email address"
+                      placeholder="name@company.com"
+                      className="pr-10"
                       {...field}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4 mt-4">
-            <Button
-              type="submit"
-              className="w-full bg-[var(--purple)] text-[var(--purple-foreground)] hover:bg-[var(--purple)]/90"
-              disabled={isForgotPasswordLoading}
-            >
-              {isForgotPasswordLoading ? "Sending..." : "Send Reset Link"}
-            </Button>
-            <div className="text-center text-sm">
-              Remember your password?{" "}
-              <Link
-                to="/auth/login"
-                className="text-[var(--purple)] hover:underline"
-              >
-                Sign in
-              </Link>
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {form.formState.errors.root && (
+            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+              {form.formState.errors.root.message}
             </div>
-          </CardFooter>
+          )}
+
+          {/* Submit Button */}
+          <Button
+            type="submit"
+            className="w-full bg-[var(--purple)] text-[var(--purple-foreground)] hover:bg-[var(--purple)]/90 h-11 text-base font-semibold"
+            disabled={isForgotPasswordLoading}
+          >
+            {isForgotPasswordLoading
+              ? "Sending reset link..."
+              : "Send Reset Link"}
+          </Button>
         </form>
       </Form>
-    </Card>
+
+      {/* Back to Login */}
+      <div className="text-center">
+        <Link
+          to="/login"
+          className="inline-flex items-center gap-2 text-sm text-[var(--purple)] hover:underline"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to login
+        </Link>
+      </div>
+    </div>
   );
 };

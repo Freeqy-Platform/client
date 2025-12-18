@@ -1,11 +1,123 @@
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { ChevronDownIcon } from "@heroicons/react/16/solid";
-import { Link } from "react-router-dom";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useState } from "react";
+import { toast } from "sonner";
+
+const contactSchema = z.object({
+  fullName: z.string().min(2, "Full name must be at least 2 characters"),
+  inquiryType: z.enum([
+    "feature-request",
+    "bug-report",
+    "fraud-abuse",
+    "career",
+    "partnership",
+    "other",
+  ]),
+  email: z.string().email("Please enter a valid email address"),
+  phone: z
+    .string()
+    .min(10, "Phone number must be at least 10 characters")
+    .optional()
+    .or(z.literal("")),
+  message: z.string().min(10, "Message must be at least 10 characters"),
+});
+
+type ContactFormData = z.infer<typeof contactSchema>;
+
+const WEB3FORMS_ACCESS_KEY = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || "";
+
+const inquiryTypeLabels: Record<ContactFormData["inquiryType"], string> = {
+  "feature-request": "Requesting a Feature",
+  "bug-report": "Reporting a Bug",
+  "fraud-abuse": "Reporting Fraud or Abuse",
+  career: "Career",
+  partnership: "Partnership",
+  other: "Something Else",
+};
 
 export default function Contact() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const form = useForm<ContactFormData>({
+    resolver: zodResolver(contactSchema),
+    defaultValues: {
+      fullName: "",
+      inquiryType: undefined as ContactFormData["inquiryType"] | undefined,
+      email: "",
+      phone: "",
+      message: "",
+    },
+  });
+
+  const onSubmit = async (data: ContactFormData) => {
+    if (!WEB3FORMS_ACCESS_KEY) {
+      toast.error(
+        "Web3Forms access key is not configured. Please contact the administrator."
+      );
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          access_key: WEB3FORMS_ACCESS_KEY,
+          subject: `Contact Form: ${inquiryTypeLabels[data.inquiryType]}`,
+          from_name: data.fullName,
+          from_email: data.email,
+          phone: data.phone || "Not provided",
+          message: data.message,
+          inquiry_type: inquiryTypeLabels[data.inquiryType],
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success("Message sent successfully! We'll get back to you soon.");
+        form.reset();
+      } else {
+        toast.error(
+          result.message || "Failed to send message. Please try again."
+        );
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      toast.error("An error occurred. Please try again later.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <div className="bg-primary/10 px-6 py-4 sm:py-12 lg:px-8">
-      <div className="mx-auto max-w-2xl text-center">
+    <div className="px-4 py-8 sm:py-12 lg:px-8">
+      <div className="mx-auto max-w-2xl text-center mb-8">
         <h2 className="text-4xl font-semibold tracking-tight text-balance text-foreground sm:text-5xl">
           Contact Us
         </h2>
@@ -13,146 +125,146 @@ export default function Contact() {
           Get in touch with us for any questions or support.
         </p>
       </div>
-      <form action="#" method="POST" className="mx-auto mt-8 max-w-xl sm:mt-12">
-        <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
-          <div>
-            <label
-              htmlFor="first-name"
-              className="block text-sm/6 font-semibold text-foreground"
-            >
-              First name
-            </label>
-            <div className="mt-2.5">
-              <input
-                id="first-name"
-                name="first-name"
-                type="text"
-                autoComplete="given-name"
-                className="block w-full rounded-md bg-background border border-input px-3.5 py-2 text-base text-foreground placeholder:text-muted-foreground focus:outline-2 focus:outline-ring focus:border-ring"
-              />
-            </div>
-          </div>
-          <div>
-            <label
-              htmlFor="last-name"
-              className="block text-sm/6 font-semibold text-foreground"
-            >
-              Last name
-            </label>
-            <div className="mt-2.5">
-              <input
-                id="last-name"
-                name="last-name"
-                type="text"
-                autoComplete="family-name"
-                className="block w-full rounded-md bg-background border border-input px-3.5 py-2 text-base text-foreground placeholder:text-muted-foreground focus:outline-2 focus:outline-ring focus:border-ring"
-              />
-            </div>
-          </div>
-          <div className="sm:col-span-2">
-            <label
-              htmlFor="email"
-              className="block text-sm/6 font-semibold text-foreground"
-            >
-              Email
-            </label>
-            <div className="mt-2.5">
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                className="block w-full rounded-md bg-background border border-input px-3.5 py-2 text-base text-foreground placeholder:text-muted-foreground focus:outline-2 focus:outline-ring focus:border-ring"
-              />
-            </div>
-          </div>
-          <div className="sm:col-span-2">
-            <label
-              htmlFor="phone-number"
-              className="block text-sm/6 font-semibold text-foreground"
-            >
-              Phone number
-            </label>
-            <div className="mt-2.5">
-              <div className="flex rounded-md bg-background border border-input has-[input:focus-within]:outline-2 has-[input:focus-within]:outline-ring has-[input:focus-within]:border-ring">
-                <div className="grid shrink-0 grid-cols-1 focus-within:relative">
-                  <select
-                    id="country"
-                    name="country"
-                    autoComplete="country"
-                    aria-label="Country"
-                    className="col-start-1 row-start-1 w-full appearance-none rounded-md bg-transparent py-2 pr-7 pl-3.5 text-base text-foreground placeholder:text-muted-foreground focus:outline-none sm:text-sm/6"
+
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="mx-auto mt-8 max-w-2xl sm:mt-12 space-y-6"
+        >
+          {/* First Row: Full Name and Inquiry Type */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            {/* Full Name */}
+            <FormField
+              control={form.control}
+              name="fullName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Full Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Your Name"
+                      autoComplete="name"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Inquiry Type Dropdown */}
+            <FormField
+              control={form.control}
+              name="inquiryType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>What are you contacting us about?</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value || ""}
                   >
-                    <option>EGY</option>
-                    <option>KSA</option>
-                    <option>UAE</option>
-                  </select>
-                  <ChevronDownIcon
-                    aria-hidden="true"
-                    className="pointer-events-none col-start-1 row-start-1 mr-2 size-5 self-center justify-self-end text-muted-foreground sm:size-4"
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select an option" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="feature-request">
+                        Requesting a Feature
+                      </SelectItem>
+                      <SelectItem value="bug-report">
+                        Reporting a Bug
+                      </SelectItem>
+                      <SelectItem value="fraud-abuse">
+                        Reporting Fraud or Abuse
+                      </SelectItem>
+                      <SelectItem value="career">Career</SelectItem>
+                      <SelectItem value="partnership">Partnership</SelectItem>
+                      <SelectItem value="other">Something Else</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Second Row: Email and Phone */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            {/* Email */}
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="email"
+                      placeholder="example@example.com"
+                      autoComplete="email"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Phone */}
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone Number (Optional)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="tel"
+                      placeholder="+(20) 1234567890"
+                      autoComplete="tel"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          {/* Message */}
+          <FormField
+            control={form.control}
+            name="message"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Message</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Tell us more about your inquiry..."
+                    rows={6}
+                    className="resize-none"
+                    {...field}
                   />
-                </div>
-                <input
-                  id="phone-number"
-                  name="phone-number"
-                  type="text"
-                  placeholder="123-456-7890"
-                  className="block min-w-0 grow bg-transparent py-1.5 pr-3 pl-1 text-base text-foreground placeholder:text-muted-foreground focus:outline-none sm:text-sm/6"
-                />
-              </div>
-            </div>
-          </div>
-          <div className="sm:col-span-2">
-            <label
-              htmlFor="message"
-              className="block text-sm/6 font-semibold text-foreground"
-            >
-              Message
-            </label>
-            <div className="mt-2.5">
-              <textarea
-                id="message"
-                name="message"
-                rows={4}
-                className="block w-full rounded-md bg-background border border-input px-3.5 py-2 text-base text-foreground placeholder:text-muted-foreground focus:outline-2 focus:outline-ring focus:border-ring"
-                defaultValue={""}
-              />
-            </div>
-          </div>
-          <div className="flex gap-x-4 sm:col-span-2">
-            <div className="flex h-6 items-center">
-              <div className="group relative inline-flex w-8 shrink-0 rounded-full bg-secondary p-px border border-input transition-colors duration-200 ease-in-out has-checked:bg-primary has-focus-visible:outline-2 has-focus-visible:outline-ring">
-                <span className="size-4 rounded-full bg-background shadow-xs border border-input transition-transform duration-200 ease-in-out group-has-checked:translate-x-3.5" />
-                <input
-                  id="agree-to-policies"
-                  name="agree-to-policies"
-                  type="checkbox"
-                  aria-label="Agree to policies"
-                  className="absolute inset-0 appearance-none focus:outline-hidden"
-                />
-              </div>
-            </div>
-            <label
-              htmlFor="agree-to-policies"
-              className="text-sm/6 text-muted-foreground"
-            >
-              By selecting this, you agree to our{" "}
-              <Link
-                to="/privacy-policy"
-                className="font-semibold whitespace-nowrap text-primary hover:text-primary/80"
-              >
-                privacy policy
-              </Link>
-              .
-            </label>
-          </div>
-        </div>
-        <div className="mt-10">
-          <Button type="submit" variant="default" size="lg" className="w-full">
-            Send Message
+                </FormControl>
+                <FormDescription>
+                  Please provide as much detail as possible
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Submit Button */}
+          <Button
+            type="submit"
+            size="lg"
+            className="w-full bg-[var(--purple)] text-[var(--purple-foreground)] hover:bg-[var(--purple)]/90"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Sending..." : "Send Message"}
           </Button>
-        </div>
-      </form>
+        </form>
+      </Form>
     </div>
   );
 }

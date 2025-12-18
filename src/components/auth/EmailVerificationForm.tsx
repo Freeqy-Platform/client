@@ -5,14 +5,6 @@ import { Link, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { Button } from "../ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "../ui/card";
-import {
   Form,
   FormControl,
   FormField,
@@ -22,6 +14,8 @@ import {
 } from "../ui/form";
 import { Input } from "../ui/input";
 import { useAuth } from "../../hooks/auth/useAuth";
+import { Mail, ArrowLeft } from "lucide-react";
+import { setFormErrors } from "../../lib/form-error-handler";
 
 const emailVerificationSchema = z.object({
   code: z.string().min(6, "Verification code must be at least 6 characters"),
@@ -38,7 +32,6 @@ export const EmailVerificationForm = () => {
     isResendConfirmationLoading,
   } = useAuth();
 
-  // Support both 'id' (old) and 'userId' (new) query params
   const userId = searchParams.get("userId") || searchParams.get("id");
   const code = searchParams.get("code");
   const email = searchParams.get("email");
@@ -56,10 +49,18 @@ export const EmailVerificationForm = () => {
       return;
     }
 
-    confirmEmail({
-      id: userId,
-      code: data.code,
-    });
+    form.clearErrors();
+    confirmEmail(
+      {
+        id: userId,
+        code: data.code,
+      },
+      {
+        onError: (error) => {
+          setFormErrors(error, form.setError);
+        },
+      }
+    );
   };
 
   // Auto-submit if both userId and code are provided in URL
@@ -87,33 +88,30 @@ export const EmailVerificationForm = () => {
 
   if (!userId) {
     return (
-      <Card className="w-full max-w-md mx-auto">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center text-destructive">
-            Invalid Link
-          </CardTitle>
-          <CardDescription className="text-center">
+      <div className="w-full space-y-6">
+        <div className="space-y-2 text-center">
+          <h1 className="text-3xl font-bold text-destructive">Invalid Link</h1>
+          <p className="text-muted-foreground">
             This verification link is invalid or has expired.
-          </CardDescription>
-        </CardHeader>
-        <CardFooter>
-          <Link to="/auth/register" className="w-full">
-            <Button className="w-full bg-[var(--purple)] text-[var(--purple-foreground)] hover:bg-[var(--purple)]/90">
-              Register Again
-            </Button>
-          </Link>
-        </CardFooter>
-      </Card>
+          </p>
+        </div>
+        <Link to="/register" className="block">
+          <Button className="w-full bg-[var(--purple)] text-[var(--purple-foreground)] hover:bg-[var(--purple)]/90 h-11 text-base font-semibold">
+            Register Again
+          </Button>
+        </Link>
+      </div>
     );
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold text-center">
-          Verify Email
-        </CardTitle>
-        <CardDescription className="text-center">
+    <div className="w-full space-y-6">
+      {/* Header */}
+      <div className="space-y-2 text-center">
+        <h1 className="text-3xl font-bold text-foreground">
+          Verify your email
+        </h1>
+        <p className="text-muted-foreground">
           {email ? (
             <>
               We've sent a verification code to <strong>{email}</strong>
@@ -123,67 +121,73 @@ export const EmailVerificationForm = () => {
           ) : (
             "Enter the verification code sent to your email"
           )}
-        </CardDescription>
-      </CardHeader>
+        </p>
+      </div>
+
+      {/* Form */}
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
-            <FormField
-              control={form.control}
-              name="code"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Verification Code</FormLabel>
-                  <FormControl>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="code"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Verification Code</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Enter 6-digit code"
                       maxLength={6}
+                      className="pr-10 text-center text-2xl tracking-widest"
                       {...field}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            {form.formState.errors.root && (
-              <div className="text-sm text-destructive">
-                {form.formState.errors.root.message}
-              </div>
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             )}
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4 mt-4">
-            <Button
-              type="submit"
-              className="w-full bg-[var(--purple)] text-[var(--purple-foreground)] hover:bg-[var(--purple)]/90"
-              disabled={isConfirmEmailLoading}
-            >
-              {isConfirmEmailLoading ? "Verifying..." : "Verify Email"}
-            </Button>
-            <div className="text-center text-sm space-y-2">
-              <div>
-                Didn't receive the code?{" "}
-                <Button
-                  type="button"
-                  variant="link"
-                  className="p-0 h-auto text-[var(--purple)]"
-                  onClick={handleResendCode}
-                  disabled={isResendConfirmationLoading}
-                >
-                  {isResendConfirmationLoading ? "Sending..." : "Resend Code"}
-                </Button>
-              </div>
-              <div>
-                <Link
-                  to="/auth/login"
-                  className="text-[var(--purple)] hover:underline"
-                >
-                  Back to Sign In
-                </Link>
-              </div>
+          />
+
+          {form.formState.errors.root && (
+            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+              {form.formState.errors.root.message}
             </div>
-          </CardFooter>
+          )}
+
+          {/* Submit Button */}
+          <Button
+            type="submit"
+            className="w-full bg-[var(--purple)] text-[var(--purple-foreground)] hover:bg-[var(--purple)]/90 h-11 text-base font-semibold"
+            disabled={isConfirmEmailLoading}
+          >
+            {isConfirmEmailLoading ? "Verifying..." : "Verify Email"}
+          </Button>
         </form>
       </Form>
-    </Card>
+
+      {/* Resend Code */}
+      <div className="text-center space-y-2">
+        <p className="text-sm text-muted-foreground">
+          Didn't receive the code?{" "}
+          <Button
+            type="button"
+            variant="link"
+            className="p-0 h-auto text-[var(--purple)] font-semibold"
+            onClick={handleResendCode}
+            disabled={isResendConfirmationLoading}
+          >
+            {isResendConfirmationLoading ? "Sending..." : "Resend Code"}
+          </Button>
+        </p>
+        <Link
+          to="/login"
+          className="inline-flex items-center gap-2 text-sm text-[var(--purple)] hover:underline"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Sign In
+        </Link>
+      </div>
+    </div>
   );
 };

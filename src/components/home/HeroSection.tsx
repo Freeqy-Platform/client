@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { FeatureList } from "./FeatureList";
 import { StatCard } from "./StatCard";
 import { Users } from "lucide-react";
+import team from "../../assets/imgs/home/hero.jpg";
 
 interface HeroSectionProps {
   onGetStarted?: () => void;
@@ -61,15 +62,14 @@ export const HeroSection = ({
           {/* Right Image Area */}
           <div className="relative">
             {/* Placeholder for team image */}
-            <div className="relative h-[400px] w-full overflow-hidden rounded-lg bg-gradient-to-br from-muted to-muted/50 sm:h-[500px] lg:h-[600px]">
+            <div className="relative h-[400px] w-full overflow-hidden rounded-lg sm:h-[500px] lg:h-[600px]">
               {/* This would be replaced with an actual image */}
               <div className="flex h-full items-center justify-center">
-                <div className="text-center">
-                  <Users className="mx-auto h-24 w-24 text-muted-foreground/30" />
-                  <p className="mt-4 text-sm text-muted-foreground">
-                    Team collaboration image
-                  </p>
-                </div>
+                <img
+                  src={team}
+                  alt="team collaboration"
+                  className="w-full h-full object-cover rounded-lg"
+                />
               </div>
 
               {/* Overlay Statistic Card */}
@@ -83,4 +83,3 @@ export const HeroSection = ({
     </section>
   );
 };
-

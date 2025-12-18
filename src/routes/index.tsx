@@ -6,13 +6,15 @@ import NotFound from "../pages/NotFound";
 import Contact from "../pages/Contact";
 import About from "../pages/About";
 import Dashboard from "../pages/Dashboard";
+import PrivacyPolicy from "../pages/PrivacyPolicy";
+import TermsOfService from "../pages/TermsOfService";
 import Register from "../pages/auth/Register";
 import Login from "../pages/auth/login";
 import ForgotPassword from "../pages/auth/forgot-password";
 import ResetPassword from "../pages/auth/reset-password";
 import VerifyEmail from "../pages/auth/verify-email";
-import AthLayout from "../components/auth/AthLayout";
 import ProfilePage from "@/pages/ProfilePage";
+import { AuthLayout } from "@/components/auth/AuthLayout";
 
 const MainRouter = () => {
   return (
@@ -21,8 +23,8 @@ const MainRouter = () => {
         <Route index element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
-        {/* <Route path="/privacy-policy" element={<PrivacyPolicy />} /> */}
-        {/* <Route path="/terms-of-service" element={<TermsOfService />} /> */}
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfService />} />
 
         {/* Protected Routes */}
         <Route
@@ -46,60 +48,45 @@ const MainRouter = () => {
       </Route>
 
       <Route
-        path="/auth/login"
+        path="/login"
         element={
-          <AthLayout>
+          <AuthLayout variant="login">
             <Login />
-          </AthLayout>
+          </AuthLayout>
         }
       />
       <Route
-        path="/auth/register"
+        path="/register"
         element={
-          <AthLayout>
+          <AuthLayout variant="register">
             <Register />
-          </AthLayout>
+          </AuthLayout>
         }
       />
       <Route
-        path="/auth/forgot-password"
+        path="/forgot-password"
         element={
-          <AthLayout>
+          <AuthLayout variant="forgot">
             <ForgotPassword />
-          </AthLayout>
+          </AuthLayout>
         }
       />
-      <Route
-        path="/auth/reset-password"
-        element={
-          <AthLayout>
-            <ResetPassword />
-          </AthLayout>
-        }
-      />
-      {/* Support new camelCase reset password link from emails */}
       <Route
         path="/resetPassword"
         element={
-          <AthLayout>
+          <AuthLayout variant="reset">
             <ResetPassword />
-          </AthLayout>
+          </AuthLayout>
         }
       />
       <Route
         path="/emailConfirmation"
         element={
-          <AthLayout>
+          <AuthLayout variant="verify">
             <VerifyEmail />
-          </AthLayout>
+          </AuthLayout>
         }
       />
-
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/verify-email" element={<VerifyEmail />} />
     </Routes>
   );
 };

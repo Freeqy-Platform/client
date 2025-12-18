@@ -3,15 +3,13 @@ import { Users } from "lucide-react";
 
 const Footer = () => {
   const platformLinks = [
-    { label: "How it Works", path: "#how-it-works" },
+    { label: "How it Works", path: "/how-it-works" },
     { label: "Browse Projects", path: "/projects" },
     { label: "Find Teams", path: "/teams" },
-    { label: "Pricing", path: "/pricing" },
   ];
 
   const companyLinks = [
     { label: "About Us", path: "/about" },
-    { label: "Careers", path: "/careers" },
     { label: "Blog", path: "/blog" },
     { label: "Contact", path: "/contact" },
   ];
@@ -20,12 +18,11 @@ const Footer = () => {
     { label: "Help Center", path: "/help" },
     { label: "Privacy Policy", path: "/privacy" },
     { label: "Terms of Service", path: "/terms" },
-    { label: "Community", path: "/community" },
   ];
 
   return (
     <footer className="bg-[#1e293b] text-white">
-      <div className="container mx-auto px-4 py-12 lg:px-8 lg:py-16">
+      <div className="container mx-auto px-4 pt-12 pb-6 lg:px-8 lg:pt-16 lg:pb-8">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {/* Branding Column */}
           <div className="sm:col-span-2 lg:col-span-1">
@@ -95,7 +92,7 @@ const Footer = () => {
         {/* Copyright */}
         <div className="mt-12 border-t border-white/10 pt-8 text-center">
           <p className="text-sm text-white/60">
-            © 2024 Freeqy. All rights reserved.
+            © {new Date().getFullYear()} Freeqy. All rights reserved.
           </p>
         </div>
       </div>

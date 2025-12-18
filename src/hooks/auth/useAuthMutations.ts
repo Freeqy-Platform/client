@@ -113,7 +113,7 @@ export const useResetPassword = () => {
       toast.success(
         "Password reset successful! Please login with your new password."
       );
-      navigate("/auth/login");
+      navigate("/login");
     },
     onError: (error) => {
       const message = extractErrorMessage(error);
@@ -148,7 +148,7 @@ export const useConfirmEmail = () => {
     mutationFn: authApi.confirmEmail,
     onSuccess: () => {
       toast.success("Email confirmed successfully!");
-      navigate("/auth/login");
+      navigate("/login");
     },
     onError: (error) => {
       const message = extractErrorMessage(error);
@@ -224,7 +224,7 @@ export const useRevokeRefreshToken = () => {
       localStorage.removeItem("auth_refresh_token_expiry");
       queryClient.clear();
       toast.success("Logged out successfully");
-      navigate("/auth/login");
+      navigate("/login");
     },
     onError: (error) => {
       const message = extractErrorMessage(error);
@@ -252,6 +252,6 @@ export const useLogout = () => {
     queryClient.clear();
 
     toast.success("Logged out successfully");
-    navigate("/auth/login");
+    navigate("/login");
   };
 };
