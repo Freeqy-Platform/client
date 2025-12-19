@@ -1,13 +1,13 @@
 import React from "react";
-import { useAuth } from "../hooks/auth/useAuth";
-import { Button } from "../components/ui/button";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "../components/ui/card";
+} from "@/components/ui/card";
 
 /**
  * Dashboard page component for authenticated users

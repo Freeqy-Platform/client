@@ -35,7 +35,23 @@ export const userService = {
    * Update current user profile
    */
   updateProfile: async (data: UpdateUserProfileRequest): Promise<User> => {
-    return apiClient.put<User>("/Users/me", data);
+    // Transform to match API format (PascalCase for FirstName/LastName)
+    const requestData: {
+      track?: string;
+      FirstName?: string;
+      LastName?: string;
+    } = {};
+
+    if (data.track) requestData.track = data.track;
+    if (data.FirstName) requestData.FirstName = data.FirstName;
+    if (data.LastName) requestData.LastName = data.LastName;
+    // Fallback to camelCase if PascalCase not provided
+    if (!requestData.FirstName && data.firstName)
+      requestData.FirstName = data.firstName;
+    if (!requestData.LastName && data.lastName)
+      requestData.LastName = data.lastName;
+
+    return apiClient.put<User>("/Users/me", requestData);
   },
 
   /**
@@ -43,7 +59,7 @@ export const userService = {
    * Get user by id
    */
   getUserById: async (id: string): Promise<User> => {
-    return apiClient.get<User>(`/Users/${id}`);
+    return apiClient.get<User>(`/api/Users/${id}`);
   },
 
   /**
@@ -87,113 +103,61 @@ export const userService = {
       headers: {
         "Content-Type": "multipart/form-data",
       },
-    } as any);
+    });
   },
 
-  /**
-   * DELETE /api/Users/me/photo
-   * Delete user photo
-   */
   deletePhoto: async (): Promise<void> => {
     await apiClient.delete("/Users/me/photo");
   },
 
-  /**
-   * POST /api/Users/me/skills
-   * Update user skills
-   */
   updateSkills: async (data: UpdateUserSkillsRequest): Promise<void> => {
     await apiClient.post("/Users/me/skills", data);
   },
 
-  /**
-   * PUT /api/Users/me/social-links
-   * Update social links
-   */
   updateSocialLinks: async (data: UpdateSocialLinksRequest): Promise<void> => {
     await apiClient.put("/Users/me/social-links", data);
   },
 
-  /**
-   * PUT /api/Users/me/education
-   * Update educations
-   */
   updateEducation: async (data: UpdateEducationsRequest): Promise<void> => {
     await apiClient.put("/Users/me/education", data);
   },
 
-  /**
-   * PUT /api/Users/me/certificates
-   * Update certificates
-   */
   updateCertificates: async (
     data: UpdateCertificatesRequest
   ): Promise<void> => {
     await apiClient.put("/Users/me/certificates", data);
   },
 
-  /**
-   * PUT /api/Users/me/username
-   * Update username
-   */
   updateUsername: async (data: UpdateUsernameRequest): Promise<void> => {
     await apiClient.put("/Users/me/username", data);
   },
 
-  /**
-   * PUT /api/Users/me/phone-number
-   * Update phone number
-   */
   updatePhoneNumber: async (data: UpdatePhoneNumberRequest): Promise<void> => {
     await apiClient.put("/Users/me/phone-number", data);
   },
 
-  /**
-   * PUT /api/Users/me/summary
-   * Update summary
-   */
   updateSummary: async (data: UpdateSummaryRequest): Promise<void> => {
     await apiClient.put("/Users/me/summary", data);
   },
 
-  /**
-   * PUT /api/Users/me/availability
-   * Update availability
-   */
   updateAvailability: async (
     data: UpdateAvailabilityRequest
   ): Promise<void> => {
     await apiClient.put("/Users/me/availability", data);
   },
 
-  /**
-   * PUT /api/Users/me/email
-   * Update email
-   */
   updateEmail: async (data: UpdateEmailRequest): Promise<void> => {
     await apiClient.put("/Users/me/email", data);
   },
 
-  /**
-   * PUT /api/Users/me/password
-   * Update password
-   */
   updatePassword: async (data: UpdatePasswordRequest): Promise<void> => {
     await apiClient.put("/Users/me/password", data);
   },
 
-  /**
-   * GET /api/Users/search/{username}
-   * Search user by username
-   */
   searchByUsername: async (username: string): Promise<User> => {
     return apiClient.get<User>(`/Users/search/${username}`);
   },
 
-  /**
-   * POST /api/Users/confirm-email
-   * Confirm email via userId and token query params
-   */
   confirmEmail: async (data: ConfirmEmailRequest): Promise<void> => {
     const queryParams = new URLSearchParams({
       userId: data.userId,

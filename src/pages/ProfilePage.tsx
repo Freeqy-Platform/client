@@ -1,52 +1,116 @@
-import React from "react";
+import React, { useState } from "react";
 import { useMe } from "../hooks/user/userHooks";
-import { Button } from "../components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../components/ui/card";
+  useUpdateProfile,
+  useUpdateSkills,
+  useUpdateSocialLinks,
+  useUpdateEducation,
+  useUpdateCertificates,
+  useUpdateSummary,
+  useUploadPhoto,
+  useDeletePhoto,
+} from "../hooks/user/userHooks";
+import { Card, CardContent } from "../components/ui/card";
 import { Skeleton } from "../components/ui/skeleton";
-import {
-  Mail,
-  Phone,
-  Briefcase,
-  Calendar,
-  GraduationCap,
-  Award,
-  Github,
-  Linkedin,
-  Globe,
-  Edit,
-} from "lucide-react";
-import { Link } from "react-router-dom";
-import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
+import { ProfilePhoto } from "../components/profile/ProfilePhoto";
+import { ProfileHeader } from "../components/profile/ProfileHeader";
+import { AboutSection } from "../components/profile/sections/AboutSection";
+import { SkillsSection } from "../components/profile/sections/SkillsSection";
+import { EducationSection } from "../components/profile/sections/EducationSection";
+import { CertificatesSection } from "../components/profile/sections/CertificatesSection";
+import { SocialLinksSection } from "../components/profile/sections/SocialLinksSection";
+import type {
+  UpdateUserProfileRequest,
+  UpdateUserSkillsRequest,
+  UpdateSocialLinksRequest,
+  UpdateEducationsRequest,
+  UpdateCertificatesRequest,
+  UpdateSummaryRequest,
+} from "../types/user";
 
 /**
- * ProfilePage - View current user profile
- * Example usage of useMe and useUserPhoto hooks
+ * LinkedIn/Facebook-style Profile Page with inline editing
  */
 const ProfilePage: React.FC = () => {
   const { data: user, isLoading, error } = useMe();
+  const updateProfile = useUpdateProfile();
+  const updateSkills = useUpdateSkills();
+  const updateSocialLinks = useUpdateSocialLinks();
+  const updateEducation = useUpdateEducation();
+  const updateCertificates = useUpdateCertificates();
+  const updateSummary = useUpdateSummary();
+  const uploadPhoto = useUploadPhoto();
+  const deletePhoto = useDeletePhoto();
+
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+  // Photo handling
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPhotoPreview(URL.createObjectURL(file));
+      try {
+        await uploadPhoto.mutateAsync(file);
+      } catch (error) {
+        console.error("Error uploading photo:", error);
+      }
+    }
+  };
+
+  const handleDeletePhoto = async () => {
+    try {
+      await deletePhoto.mutateAsync();
+      setPhotoPreview(null);
+    } catch (error) {
+      console.error("Error deleting photo:", error);
+    }
+  };
+
+  // Form handlers
+  const handleProfileUpdate = async (data: UpdateUserProfileRequest) => {
+    await updateProfile.mutateAsync(data);
+  };
+
+  const handleSummaryUpdate = async (data: UpdateSummaryRequest) => {
+    await updateSummary.mutateAsync(data);
+  };
+
+  const handleSkillsUpdate = async (data: UpdateUserSkillsRequest) => {
+    await updateSkills.mutateAsync(data);
+  };
+
+  const handleEducationUpdate = async (data: UpdateEducationsRequest) => {
+    await updateEducation.mutateAsync(data);
+  };
+
+  const handleCertificatesUpdate = async (data: UpdateCertificatesRequest) => {
+    await updateCertificates.mutateAsync(data);
+  };
+
+  const handleSocialLinksUpdate = async (data: UpdateSocialLinksRequest) => {
+    await updateSocialLinks.mutateAsync(data);
+  };
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="space-y-6">
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-64 w-full" />
+      <div className="min-h-screen bg-muted/30">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Skeleton className="h-48 w-full mb-4" />
+          <div className="space-y-4">
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-48 w-full" />
+          </div>
         </div>
       </div>
     );
   }
 
-  if (error) {
+  if (error || !user) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <Card>
+      <div className="min-h-screen bg-muted/30 flex items-center justify-center">
+        <Card className="max-w-md border-0 shadow-md">
           <CardContent className="pt-6">
-            <p className="text-destructive">
+            <p className="text-destructive text-center">
               Failed to load profile. Please try again.
             </p>
           </CardContent>
@@ -55,232 +119,58 @@ const ProfilePage: React.FC = () => {
     );
   }
 
-  if (!user) {
-    return (
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <Card>
-          <CardContent className="pt-6">
-            <p>No profile data available.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const photoUrl =
-    user.photoUrl ?? (user.photo ? String(user.photo) : undefined);
-
-  const initials =
-    `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.trim() ||
-    user.userName?.slice(0, 2).toUpperCase() ||
-    "U";
-
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="space-y-6">
-        {/* Profile Header */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-6">
-                <Avatar className="h-24 w-24">
-                  {photoUrl && (
-                    <AvatarImage
-                      src={photoUrl}
-                      alt={`${user.firstName} ${user.lastName}`}
-                      className="object-cover"
-                    />
-                  )}
-                  <AvatarFallback className="text-xl font-semibold bg-[var(--purple)] text-[var(--purple-foreground)]">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <h1 className="text-3xl font-bold">
-                    {user.firstName} {user.lastName}
-                  </h1>
-                  {user.userName && (
-                    <p className="text-muted-foreground">@{user.userName}</p>
-                  )}
-                  {user.track && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {user.track}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" asChild>
-                  <Link to="/profile/edit">
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit Profile
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Contact Info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {user.email && (
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{user.email}</span>
-                  {user.isEmailConfirmed && (
-                    <span className="text-xs text-success">✓ Verified</span>
-                  )}
-                </div>
-              )}
-              {user.phoneNumber && (
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{user.phoneNumber}</span>
-                </div>
-              )}
-              {user.availability && (
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{user.availability}</span>
-                </div>
-              )}
-            </div>
+    <div className="min-h-screen bg-muted/30">
+      {/* Cover Photo Section */}
+      <div className="relative h-48 bg-gradient-to-br from-[var(--purple)] via-purple-600 to-purple-800">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-end pb-6">
+          <ProfilePhoto
+            user={user}
+            photoPreview={photoPreview}
+            onPhotoUpload={handlePhotoUpload}
+            onPhotoDelete={handleDeletePhoto}
+          />
+        </div>
+      </div>
 
-            {/* Summary */}
-            {user.summary && (
-              <div>
-                <h3 className="font-semibold mb-2">About</h3>
-                <p className="text-sm text-muted-foreground">{user.summary}</p>
-              </div>
-            )}
+      {/* Main Content */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+        <ProfileHeader
+          user={user}
+          onUpdate={handleProfileUpdate}
+          isUpdating={updateProfile.isPending}
+        />
 
-            {/* Social Links */}
-            {user.socialLinks && (
-              <div>
-                <h3 className="font-semibold mb-2">Social Links</h3>
-                <div className="flex gap-4">
-                  {user.socialLinks.github && (
-                    <a
-                      href={user.socialLinks.github}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-                    >
-                      <Github className="h-4 w-4" />
-                      GitHub
-                    </a>
-                  )}
-                  {user.socialLinks.linkedin && (
-                    <a
-                      href={user.socialLinks.linkedin}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-                    >
-                      <Linkedin className="h-4 w-4" />
-                      LinkedIn
-                    </a>
-                  )}
-                  {user.socialLinks.website && (
-                    <a
-                      href={user.socialLinks.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-                    >
-                      <Globe className="h-4 w-4" />
-                      Website
-                    </a>
-                  )}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <AboutSection
+          user={user}
+          onUpdate={handleSummaryUpdate}
+          isUpdating={updateSummary.isPending}
+        />
 
-        {/* Skills */}
-        {user.skills && user.skills.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Briefcase className="h-5 w-5" />
-                Skills
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {user.skills.map((skill, index) => (
-                  <span
-                    key={index}
-                    className="px-3 py-1 bg-muted rounded-full text-sm"
-                  >
-                    {skill.name}
-                    {skill.level && (
-                      <span className="text-xs text-muted-foreground ml-2">
-                        ({skill.level})
-                      </span>
-                    )}
-                  </span>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        <SkillsSection
+          user={user}
+          onUpdate={handleSkillsUpdate}
+          isUpdating={updateSkills.isPending}
+        />
 
-        {/* Education */}
-        {user.educations && user.educations.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <GraduationCap className="h-5 w-5" />
-                Education
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {user.educations.map((edu, index) => (
-                <div key={index} className="border-l-2 border-primary pl-4">
-                  <h4 className="font-semibold">{edu.degree}</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {edu.institution}
-                  </p>
-                  {edu.fieldOfStudy && (
-                    <p className="text-sm text-muted-foreground">
-                      {edu.fieldOfStudy}
-                    </p>
-                  )}
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {edu.startDate} - {edu.endDate || "Present"}
-                  </p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
+        <EducationSection
+          user={user}
+          onUpdate={handleEducationUpdate}
+          isUpdating={updateEducation.isPending}
+        />
 
-        {/* Certificates */}
-        {user.certificates && user.certificates.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Award className="h-5 w-5" />
-                Certificates
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {user.certificates.map((cert, index) => (
-                <div key={index} className="border-l-2 border-primary pl-4">
-                  <h4 className="font-semibold">{cert.name}</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {cert.issuingOrganization}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Issued: {cert.issueDate}
-                    {cert.expiryDate && ` - Expires: ${cert.expiryDate}`}
-                  </p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
+        <CertificatesSection
+          user={user}
+          onUpdate={handleCertificatesUpdate}
+          isUpdating={updateCertificates.isPending}
+        />
+
+        <SocialLinksSection
+          user={user}
+          onUpdate={handleSocialLinksUpdate}
+          isUpdating={updateSocialLinks.isPending}
+        />
       </div>
     </div>
   );

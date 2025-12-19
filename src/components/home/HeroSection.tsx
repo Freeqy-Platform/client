@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { FeatureList } from "./FeatureList";
 import { StatCard } from "./StatCard";
-import { Users } from "lucide-react";
 import team from "../../assets/imgs/home/hero.jpg";
 
 interface HeroSectionProps {

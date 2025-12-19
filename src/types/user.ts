@@ -18,6 +18,7 @@ export interface User {
   educations?: Education[];
   certificates?: Certificate[];
   track?: string;
+  role?: "user" | "admin";
   createdAt?: string;
   updatedAt?: string;
 }
@@ -59,32 +60,55 @@ export interface Certificate {
 
 // Request DTOs
 export interface UpdateUserProfileRequest {
-  firstName?: string;
-  lastName?: string;
+  track?: string;
+  FirstName?: string;
+  LastName?: string;
+  firstName?: string; // Keep for backwards compatibility
+  lastName?: string; // Keep for backwards compatibility
   phoneNumber?: string;
   summary?: string;
   availability?: string;
-  track?: string;
 }
 
 export interface UpdateUserSkillsRequest {
-  skills: Skill[];
+  skills: string[]; // Array of skill names as strings
+}
+
+export interface SocialLink {
+  platform: string;
+  link: string;
 }
 
 export interface UpdateSocialLinksRequest {
-  github?: string;
-  linkedin?: string;
-  twitter?: string;
-  portfolio?: string;
-  website?: string;
+  socialLinks: SocialLink[];
+}
+
+export interface EducationRequest {
+  institutionName: string; // Required field
+  degree?: string | null;
+  fieldOfStudy?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  grade?: string | null;
+  description?: string | null;
 }
 
 export interface UpdateEducationsRequest {
-  educations: Education[];
+  educations: EducationRequest[];
+}
+
+export interface CertificateRequest {
+  certificateName: string; // Required field
+  issuer?: string | null;
+  issueDate?: string | null;
+  expirationDate?: string | null;
+  credentialId?: string | null;
+  credentialUrl?: string | null;
+  description?: string | null;
 }
 
 export interface UpdateCertificatesRequest {
-  certificates: Certificate[];
+  certificates: CertificateRequest[];
 }
 
 export interface UpdateUsernameRequest {
@@ -104,13 +128,14 @@ export interface UpdateAvailabilityRequest {
 }
 
 export interface UpdateEmailRequest {
-  email: string;
+  newEmail: string;
+  currentPassword: string;
 }
 
 export interface UpdatePasswordRequest {
   currentPassword: string;
   newPassword: string;
-  confirmPassword: string;
+  confirmNewPassword: string;
 }
 
 export interface UsersListQueryParams {
@@ -121,13 +146,8 @@ export interface UsersListQueryParams {
   pageSize?: number;
 }
 
-export interface UsersListResponse {
-  users: User[];
-  totalCount: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-}
+// Users list can return an array directly or wrapped in a response object
+export type UsersListResponse = User[];
 
 export interface ConfirmEmailRequest {
   userId: string;

@@ -23,6 +23,9 @@ const authClient = axios.create({
   },
 });
 
+// Note: Auth endpoints don't need token refresh interceptors
+// They are used for login, register, etc. which don't require authentication
+
 /**
  * Authentication API client
  * All endpoints return typed responses and handle errors consistently

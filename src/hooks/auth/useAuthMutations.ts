@@ -7,6 +7,8 @@ import {
   extractValidationErrors,
 } from "../../lib/authApi";
 import { QUERY_KEYS } from "../../types/api";
+import { authService } from "../../services/authService";
+import { userService } from "../../services/userService";
 
 /**
  * Hook for login mutation
@@ -17,35 +19,48 @@ export const useLogin = () => {
 
   return useMutation({
     mutationFn: authApi.login,
-    onSuccess: (data) => {
-      // Store tokens and user data
-      localStorage.setItem("auth_token", data.token);
-      localStorage.setItem("auth_refresh_token", data.refreshToken);
-      localStorage.setItem(
-        "auth_user",
-        JSON.stringify({
-          id: data.id,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          email: data.email,
-        })
-      );
-      localStorage.setItem("auth_expires_in", data.expiresIn.toString());
-      localStorage.setItem(
-        "auth_refresh_token_expiry",
-        data.refreshTokenExpiryDate
-      );
-
-      // Update query cache
-      queryClient.setQueryData(QUERY_KEYS.auth.user, {
+    onSuccess: async (data) => {
+      // Store tokens first using authService
+      const basicUser = {
         id: data.id,
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
-      });
+      };
+      authService.setAuthData(
+        basicUser,
+        data.token,
+        data.refreshToken,
+        data.expiresIn,
+        data.refreshTokenExpiryDate
+      );
 
-      toast.success("Login successful!");
-      navigate("/dashboard");
+      // Fetch full user profile from /me endpoint
+      try {
+        const fullUser = await userService.getMe();
+        
+        // Update auth data with full user profile
+        authService.updateUser(fullUser);
+
+        // Update query cache with full user data
+        queryClient.setQueryData(QUERY_KEYS.auth.user, {
+          id: fullUser.id,
+          firstName: fullUser.firstName,
+          lastName: fullUser.lastName,
+          email: fullUser.email,
+        });
+        queryClient.setQueryData([QUERY_KEYS.auth.user, "me"], fullUser);
+
+        toast.success("Login successful!");
+        navigate("/dashboard");
+      } catch (error) {
+        // If /me fails, still proceed with basic user data
+        console.error("Failed to fetch user profile:", error);
+        queryClient.setQueryData(QUERY_KEYS.auth.user, basicUser);
+        queryClient.setQueryData([QUERY_KEYS.auth.user, "me"], basicUser);
+        toast.success("Login successful!");
+        navigate("/dashboard");
+      }
     },
     onError: (error) => {
       // Error handling is done in the form component via setFormErrors
@@ -159,6 +174,8 @@ export const useConfirmEmail = () => {
 
 /**
  * Hook for refresh token mutation
+ * Note: This is mainly used by the authService internally.
+ * The interceptor handles automatic token refresh.
  */
 export const useRefreshToken = () => {
   const queryClient = useQueryClient();
@@ -166,39 +183,22 @@ export const useRefreshToken = () => {
   return useMutation({
     mutationFn: authApi.refreshToken,
     onSuccess: (data) => {
-      // Update stored tokens and user data
-      localStorage.setItem("auth_token", data.token);
-      localStorage.setItem("auth_refresh_token", data.refreshToken);
-      localStorage.setItem(
-        "auth_user",
-        JSON.stringify({
-          id: data.id,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          email: data.email,
-        })
-      );
-      localStorage.setItem("auth_expires_in", data.expiresIn.toString());
-      localStorage.setItem(
-        "auth_refresh_token_expiry",
-        data.refreshTokenExpiryDate
-      );
+      // Update stored tokens and user data using authService
+      authService.updateTokens(data);
 
       // Update query cache
-      queryClient.setQueryData(QUERY_KEYS.auth.user, {
+      const user = {
         id: data.id,
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
-      });
+      };
+      queryClient.setQueryData(QUERY_KEYS.auth.user, user);
+      queryClient.setQueryData([QUERY_KEYS.auth.user, "me"], user);
     },
     onError: (error) => {
-      // If refresh fails, clear auth data and redirect to login
-      localStorage.removeItem("auth_token");
-      localStorage.removeItem("auth_refresh_token");
-      localStorage.removeItem("auth_user");
-      localStorage.removeItem("auth_expires_in");
-      localStorage.removeItem("auth_refresh_token_expiry");
+      // If refresh fails, clear auth data
+      authService.clearAuthData();
       queryClient.clear();
       const message = extractErrorMessage(error);
       toast.error(message || "Session expired. Please login again.");
@@ -216,12 +216,8 @@ export const useRevokeRefreshToken = () => {
   return useMutation({
     mutationFn: authApi.revokeRefreshToken,
     onSuccess: () => {
-      // Clear stored auth data
-      localStorage.removeItem("auth_token");
-      localStorage.removeItem("auth_refresh_token");
-      localStorage.removeItem("auth_user");
-      localStorage.removeItem("auth_expires_in");
-      localStorage.removeItem("auth_refresh_token_expiry");
+      // Clear stored auth data using authService
+      authService.clearAuthData();
       queryClient.clear();
       toast.success("Logged out successfully");
       navigate("/login");
@@ -241,12 +237,8 @@ export const useLogout = () => {
   const navigate = useNavigate();
 
   return () => {
-    // Clear stored data
-    localStorage.removeItem("auth_token");
-    localStorage.removeItem("auth_refresh_token");
-    localStorage.removeItem("auth_user");
-    localStorage.removeItem("auth_expires_in");
-    localStorage.removeItem("auth_refresh_token_expiry");
+    // Clear stored data using authService
+    authService.clearAuthData();
 
     // Clear query cache
     queryClient.clear();
