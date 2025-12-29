@@ -9,13 +9,16 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../../ui/dialog";
-import type { User, UpdateSocialLinksRequest, SocialLink } from "../../../types/user";
-import { SocialLinksEditor } from "../editors/SocialLinksEditor";
+} from "@/components/ui/dialog";
+import type { User, UpdateSocialLinksRequest, SocialLink } from "@/types/user";
+import { SocialLinksEditor } from "@/components/profile/editors/SocialLinksEditor";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { socialLinksSchema } from "../../../lib/validations/profileSchemas";
-import { hasSocialLinksArray } from "../../../lib/utils/profileUtils";
+import { socialLinksSchema } from "@/lib/validations/profileSchemas";
+import {
+  convertSocialLinksToArray,
+  getSocialMediaIcon,
+} from "@/lib/utils/profileUtils";
 
 interface SocialLinksSectionProps {
   user: User;
@@ -30,9 +33,10 @@ export const SocialLinksSection: React.FC<SocialLinksSectionProps> = ({
 }) => {
   const [isEditing, setIsEditing] = React.useState(false);
 
-  const socialLinksArray = hasSocialLinksArray(user.socialLinks)
-    ? user.socialLinks.socialLinks
-    : [];
+  const socialLinksArray = React.useMemo(
+    () => convertSocialLinksToArray(user.socialLinks),
+    [user.socialLinks]
+  );
 
   const form = useForm<UpdateSocialLinksRequest>({
     resolver: zodResolver(socialLinksSchema),
@@ -45,7 +49,8 @@ export const SocialLinksSection: React.FC<SocialLinksSectionProps> = ({
     form.reset({
       socialLinks: socialLinksArray,
     });
-  }, [user, form, socialLinksArray]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [socialLinksArray]);
 
   const onSubmit = async (data: UpdateSocialLinksRequest) => {
     try {
@@ -71,7 +76,7 @@ export const SocialLinksSection: React.FC<SocialLinksSectionProps> = ({
                 {socialLinksArray.length > 0 ? "Edit" : "Add"}
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="sm:max-w-lg overflow-y-auto max-h-[90vh]">
               <DialogHeader>
                 <DialogTitle className="text-xl">Edit Social Links</DialogTitle>
                 <DialogDescription className="text-sm">
@@ -91,18 +96,21 @@ export const SocialLinksSection: React.FC<SocialLinksSectionProps> = ({
       <CardContent className="pt-0">
         {socialLinksArray.length > 0 ? (
           <div className="flex flex-wrap gap-3">
-            {socialLinksArray.map((link: SocialLink, index: number) => (
-              <a
-                key={index}
-                href={link.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-[var(--purple)] transition-colors px-2 py-1 rounded-md hover:bg-muted"
-              >
-                <LinkIcon className="h-3.5 w-3.5" />
-                {link.platform}
-              </a>
-            ))}
+            {socialLinksArray.map((link: SocialLink, index: number) => {
+              const IconComponent = getSocialMediaIcon(link.platform);
+              return (
+                <a
+                  key={index}
+                  href={link.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2.5 text-sm font-medium text-foreground hover:text-[var(--purple)] transition-colors px-4 py-2.5 rounded-lg border border-border hover:border-[var(--purple)] hover:bg-muted/50"
+                >
+                  <IconComponent className="h-5 w-5 shrink-0" />
+                  <span>{link.platform}</span>
+                </a>
+              );
+            })}
           </div>
         ) : (
           <p className="text-sm text-muted-foreground italic">
@@ -113,4 +121,3 @@ export const SocialLinksSection: React.FC<SocialLinksSectionProps> = ({
     </Card>
   );
 };
-

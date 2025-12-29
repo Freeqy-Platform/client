@@ -38,10 +38,10 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
   });
 
   React.useEffect(() => {
-    form.reset({
-      skills: user.skills?.map((s) => s.name) || [],
-    });
-  }, [user, form]);
+    const skills = user.skills?.map((s) => s.name) || [];
+    form.reset({ skills });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user.skills]);
 
   const onSubmit = async (data: UpdateUserSkillsRequest) => {
     try {

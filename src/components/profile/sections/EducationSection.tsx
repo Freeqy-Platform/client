@@ -38,10 +38,10 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
   });
 
   React.useEffect(() => {
-    form.reset({
-      educations: (user.educations as UpdateEducationsRequest["educations"]) || [],
-    });
-  }, [user, form]);
+    const educations = (user.educations as UpdateEducationsRequest["educations"]) || [];
+    form.reset({ educations });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user.educations]);
 
   const onSubmit = async (data: UpdateEducationsRequest) => {
     try {

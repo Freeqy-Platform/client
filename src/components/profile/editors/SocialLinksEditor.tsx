@@ -1,12 +1,26 @@
 import React from "react";
 import { Form } from "../../ui/form";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "../../ui/form";
+import {
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "../../ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../ui/select";
 import { Input } from "../../ui/input";
 import { Button } from "../../ui/button";
 import { Plus, X } from "lucide-react";
 import { DialogFooter } from "../../ui/dialog";
 import type { UseFormReturn } from "react-hook-form";
 import type { UpdateSocialLinksRequest, SocialLink } from "../../../types/user";
+import { POPULAR_SOCIAL_PLATFORMS } from "../../../lib/utils/profileUtils";
 
 interface SocialLinksEditorProps {
   form: UseFormReturn<UpdateSocialLinksRequest>;
@@ -22,6 +36,21 @@ export const SocialLinksEditor: React.FC<SocialLinksEditorProps> = ({
   isLoading,
 }) => {
   const socialLinks = form.watch("socialLinks") || [];
+  const [customPlatforms, setCustomPlatforms] = React.useState<Record<number, string>>({});
+
+  // Initialize custom platforms from existing links
+  React.useEffect(() => {
+    const customPlatformsMap: Record<number, string> = {};
+    socialLinks.forEach((link, index) => {
+      if (link?.platform && !POPULAR_SOCIAL_PLATFORMS.includes(link.platform as any)) {
+        customPlatformsMap[index] = link.platform;
+      }
+    });
+    if (Object.keys(customPlatformsMap).length > 0) {
+      setCustomPlatforms(customPlatformsMap);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const addSocialLink = () => {
     form.setValue("socialLinks", [...socialLinks, { platform: "", link: "" }]);
@@ -32,6 +61,43 @@ export const SocialLinksEditor: React.FC<SocialLinksEditorProps> = ({
       "socialLinks",
       socialLinks.filter((_, i) => i !== index)
     );
+    // Remove custom platform for this index
+    const newCustomPlatforms = { ...customPlatforms };
+    delete newCustomPlatforms[index];
+    setCustomPlatforms(newCustomPlatforms);
+  };
+
+  const handlePlatformChange = (index: number, value: string) => {
+    const updatedLinks = [...socialLinks];
+    if (value === "Other") {
+      // Set platform to empty, we'll use customPlatforms state
+      updatedLinks[index] = { ...updatedLinks[index], platform: "" };
+      form.setValue("socialLinks", updatedLinks);
+    } else {
+      // Set platform to selected value and clear custom platform
+      updatedLinks[index] = { ...updatedLinks[index], platform: value };
+      form.setValue("socialLinks", updatedLinks);
+      const newCustomPlatforms = { ...customPlatforms };
+      delete newCustomPlatforms[index];
+      setCustomPlatforms(newCustomPlatforms);
+    }
+  };
+
+  const handleCustomPlatformChange = (index: number, value: string) => {
+    setCustomPlatforms({ ...customPlatforms, [index]: value });
+    const updatedLinks = [...socialLinks];
+    updatedLinks[index] = { ...updatedLinks[index], platform: value };
+    form.setValue("socialLinks", updatedLinks);
+  };
+
+  const getDisplayValue = (index: number) => {
+    const link = socialLinks[index];
+    if (!link?.platform) return "";
+    // If platform is in the list, return it; otherwise it's a custom platform
+    if (POPULAR_SOCIAL_PLATFORMS.includes(link.platform as any)) {
+      return link.platform;
+    }
+    return "Other";
   };
 
   return (
@@ -58,19 +124,42 @@ export const SocialLinksEditor: React.FC<SocialLinksEditorProps> = ({
               <FormField
                 control={form.control}
                 name={`socialLinks.${index}.platform`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs">Platform *</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="e.g., LinkedIn, GitHub"
-                        className="h-8 text-sm"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const isOtherSelected = getDisplayValue(index) === "Other";
+                  const customPlatformValue = customPlatforms[index] || socialLinks[index]?.platform || "";
+
+                  return (
+                    <FormItem>
+                      <FormLabel className="text-xs">Platform *</FormLabel>
+                      <Select
+                        onValueChange={(value) => handlePlatformChange(index, value)}
+                        value={getDisplayValue(index)}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="h-8 text-sm">
+                            <SelectValue placeholder="Select platform" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {POPULAR_SOCIAL_PLATFORMS.map((platform) => (
+                            <SelectItem key={platform} value={platform}>
+                              {platform}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {isOtherSelected && (
+                        <Input
+                          placeholder="Enter platform name"
+                          value={customPlatformValue}
+                          onChange={(e) => handleCustomPlatformChange(index, e.target.value)}
+                          className="h-8 text-sm mt-2"
+                        />
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
               <FormField
                 control={form.control}

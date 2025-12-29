@@ -48,7 +48,8 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       LastName: user.lastName || "",
       track: user.track || "",
     });
-  }, [user, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user.firstName, user.lastName, user.track]);
 
   const onSubmit = async (data: UpdateUserProfileRequest) => {
     try {

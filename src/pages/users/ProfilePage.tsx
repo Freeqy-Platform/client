@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useMe } from "../hooks/user/userHooks";
+import { useMe } from "../../hooks/user/userHooks";
 import {
   useUpdateProfile,
   useUpdateSkills,
@@ -9,16 +9,19 @@ import {
   useUpdateSummary,
   useUploadPhoto,
   useDeletePhoto,
-} from "../hooks/user/userHooks";
-import { Card, CardContent } from "../components/ui/card";
-import { Skeleton } from "../components/ui/skeleton";
-import { ProfilePhoto } from "../components/profile/ProfilePhoto";
-import { ProfileHeader } from "../components/profile/ProfileHeader";
-import { AboutSection } from "../components/profile/sections/AboutSection";
-import { SkillsSection } from "../components/profile/sections/SkillsSection";
-import { EducationSection } from "../components/profile/sections/EducationSection";
-import { CertificatesSection } from "../components/profile/sections/CertificatesSection";
-import { SocialLinksSection } from "../components/profile/sections/SocialLinksSection";
+  useUploadBannerPhoto,
+  useDeleteBannerPhoto,
+} from "../../hooks/user/userHooks";
+import { Card, CardContent } from "../../components/ui/card";
+import { Skeleton } from "../../components/ui/skeleton";
+import { ProfilePhoto } from "../../components/profile/ProfilePhoto";
+import { BannerPhoto } from "../../components/profile/BannerPhoto";
+import { ProfileHeader } from "../../components/profile/ProfileHeader";
+import { AboutSection } from "../../components/profile/sections/AboutSection";
+import { SkillsSection } from "../../components/profile/sections/SkillsSection";
+import { EducationSection } from "../../components/profile/sections/EducationSection";
+import { CertificatesSection } from "../../components/profile/sections/CertificatesSection";
+import { SocialLinksSection } from "../../components/profile/sections/SocialLinksSection";
 import type {
   UpdateUserProfileRequest,
   UpdateUserSkillsRequest,
@@ -26,11 +29,8 @@ import type {
   UpdateEducationsRequest,
   UpdateCertificatesRequest,
   UpdateSummaryRequest,
-} from "../types/user";
+} from "../../types/user";
 
-/**
- * LinkedIn/Facebook-style Profile Page with inline editing
- */
 const ProfilePage: React.FC = () => {
   const { data: user, isLoading, error } = useMe();
   const updateProfile = useUpdateProfile();
@@ -41,8 +41,11 @@ const ProfilePage: React.FC = () => {
   const updateSummary = useUpdateSummary();
   const uploadPhoto = useUploadPhoto();
   const deletePhoto = useDeletePhoto();
+  const uploadBannerPhoto = useUploadBannerPhoto();
+  const deleteBannerPhoto = useDeleteBannerPhoto();
 
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
 
   // Photo handling
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -63,6 +66,26 @@ const ProfilePage: React.FC = () => {
       setPhotoPreview(null);
     } catch (error) {
       console.error("Error deleting photo:", error);
+    }
+  };
+
+  // Banner photo handling
+  const handleBannerUpload = async (file: File) => {
+    try {
+      setBannerPreview(URL.createObjectURL(file));
+      await uploadBannerPhoto.mutateAsync(file);
+    } catch (error) {
+      console.error("Error uploading banner photo:", error);
+      setBannerPreview(null);
+    }
+  };
+
+  const handleBannerDelete = async () => {
+    try {
+      await deleteBannerPhoto.mutateAsync();
+      setBannerPreview(null);
+    } catch (error) {
+      console.error("Error deleting banner photo:", error);
     }
   };
 
@@ -93,7 +116,7 @@ const ProfilePage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-muted/30">
+      <div className="min-h-[calc(100vh-4rem-4.5rem)] bg-muted/30">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Skeleton className="h-48 w-full mb-4" />
           <div className="space-y-4">
@@ -107,7 +130,7 @@ const ProfilePage: React.FC = () => {
 
   if (error || !user) {
     return (
-      <div className="min-h-screen bg-muted/30 flex items-center justify-center">
+      <div className="min-h-[calc(100vh-4rem-4.5rem)] bg-muted/30 flex items-center justify-center">
         <Card className="max-w-md border-0 shadow-md">
           <CardContent className="pt-6">
             <p className="text-destructive text-center">
@@ -120,17 +143,26 @@ const ProfilePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      {/* Cover Photo Section */}
-      <div className="relative h-48 bg-gradient-to-br from-[var(--purple)] via-purple-600 to-purple-800">
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-end pb-6">
-          <ProfilePhoto
+    <div className="min-h-[calc(100vh-4rem-4.5rem)] bg-muted/30">
+      {/* Banner Photo Section */}
+      <div className="w-full flex justify-center bg-muted/30 pb-4">
+        <div className="w-full max-w-5xl px-4 sm:px-6 lg:px-8">
+          <BannerPhoto
             user={user}
-            photoPreview={photoPreview}
-            onPhotoUpload={handlePhotoUpload}
-            onPhotoDelete={handleDeletePhoto}
+            bannerPreview={bannerPreview}
+            onBannerUpload={handleBannerUpload}
+            onBannerDelete={handleBannerDelete}
+            isUploading={uploadBannerPhoto.isPending}
+            isDeleting={deleteBannerPhoto.isPending}
           />
+          <div className="relative -mt-16 pb-6">
+            <ProfilePhoto
+              user={user}
+              photoPreview={photoPreview}
+              onPhotoUpload={handlePhotoUpload}
+              onPhotoDelete={handleDeletePhoto}
+            />
+          </div>
         </div>
       </div>
 

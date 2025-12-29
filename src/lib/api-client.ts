@@ -15,7 +15,6 @@ const API_BASE_URL = env.API_BASE_URL;
 
 class ApiClient {
   private client: AxiosInstance;
-  private isRefreshing = false;
   private failedQueue: Array<{
     resolve: (value?: unknown) => void;
     reject: (reason?: unknown) => void;
@@ -34,33 +33,19 @@ class ApiClient {
   }
 
   private setupInterceptors() {
-    // Request interceptor: Add token and refresh proactively if needed
+    // Request interceptor: Add token to requests
+    // We removed proactive refresh to prevent 429 errors
+    // Token refresh will be handled by the response interceptor on 401 errors
     this.client.interceptors.request.use(
       async (config: InternalAxiosRequestConfig) => {
-        // Skip token refresh for auth endpoints
+        // Skip token for auth endpoints
         const isAuthEndpoint = config.url?.includes("/Auth/");
         if (isAuthEndpoint) {
           return config;
         }
 
-        // Proactively refresh token if it's expired or expiring soon
-        // Only refresh if not already refreshing and we have a valid refresh token
-        if (
-          authService.isTokenExpiredOrExpiringSoon() &&
-          !this.isRefreshing &&
-          authService.getRefreshToken() &&
-          !authService.isRefreshTokenExpired()
-        ) {
-          try {
-            // This will use the promise queue in authService to prevent multiple refreshes
-            await authService.refreshToken();
-          } catch (error) {
-            // Refresh failed, but don't block the request
-            // The response interceptor will handle 401
-            console.error("Proactive token refresh failed:", error);
-          }
-        }
-
+        // Simply add the current token to the request
+        // If it's expired, the server will return 401 and we'll refresh then
         const token = authService.getToken();
         if (token && config.headers) {
           config.headers.Authorization = `Bearer ${token}`;
@@ -90,7 +75,8 @@ class ApiClient {
 
         // Handle 401 Unauthorized - try to refresh token
         if (error.response?.status === 401 && !originalRequest._retry) {
-          if (this.isRefreshing) {
+          // Check if refresh is already in progress (using authService's state)
+          if (authService.isRefreshing()) {
             // If already refreshing, queue this request
             return new Promise((resolve, reject) => {
               this.failedQueue.push({ resolve, reject });
@@ -100,6 +86,7 @@ class ApiClient {
                 if (token && originalRequest.headers) {
                   originalRequest.headers.Authorization = `Bearer ${token}`;
                 }
+                originalRequest._retry = true;
                 return this.client(originalRequest);
               })
               .catch((err) => {
@@ -108,7 +95,6 @@ class ApiClient {
           }
 
           originalRequest._retry = true;
-          this.isRefreshing = true;
 
           const refreshToken = authService.getRefreshToken();
           if (!refreshToken || authService.isRefreshTokenExpired()) {
@@ -137,8 +123,6 @@ class ApiClient {
             authService.clearAuthData();
             this.processQueue(null, refreshError);
             return this.handleError(error);
-          } finally {
-            this.isRefreshing = false;
           }
         }
 

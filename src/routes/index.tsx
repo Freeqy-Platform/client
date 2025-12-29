@@ -1,10 +1,13 @@
 import { Routes, Route } from "react-router-dom";
-import Layout from "../components/navigation/Layout";
+import PublicLayout from "../components/navigation/PublicLayout";
+import AppLayout from "../components/navigation/AppLayout";
 import { ProtectedRoute } from "../components/auth/ProtectedRoute";
 import Home from "../pages/Home";
 import NotFound from "../pages/NotFound";
 import Contact from "../pages/Contact";
 import About from "../pages/About";
+import Blog from "../pages/Blog";
+import Help from "../pages/Help";
 import Dashboard from "../pages/dashboard/Dashboard";
 import PrivacyPolicy from "../pages/PrivacyPolicy";
 import TermsOfService from "../pages/TermsOfService";
@@ -13,38 +16,40 @@ import Login from "../pages/auth/login";
 import ForgotPassword from "../pages/auth/forgot-password";
 import ResetPassword from "../pages/auth/reset-password";
 import VerifyEmail from "../pages/auth/verify-email";
-import ProfilePage from "@/pages/ProfilePage";
+import ProfilePage from "@/pages/users/ProfilePage";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 
 const MainRouter = () => {
   return (
     <Routes>
-      <Route path="/" element={<Layout />}>
+      {/* Public Pages - Use PublicLayout */}
+      <Route path="/" element={<PublicLayout />}>
         <Route index element={<Home />} />
         <Route path="/about" element={<About />} />
+        <Route path="/blog" element={<Blog />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
+        <Route path="/help" element={<Help />} />
+      </Route>
 
-        {/* Protected Routes */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <ProfilePage />
-            </ProtectedRoute>
-          }
-        />
+      <Route
+        element={
+          <ProtectedRoute>
+            <AppLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        {/* Messages, Projects, and Invitations routes will have MinimalFooter when added */}
+        {/* <Route path="/messages" element={<Messages />} /> */}
+        {/* <Route path="/projects" element={<Projects />} /> */}
+        {/* <Route path="/projects/invitations" element={<Invitations />} /> */}
+      </Route>
 
-        <Route path="*" element={<NotFound />} />
+      <Route path="*" element={<PublicLayout />}>
+        <Route index element={<NotFound />} />
       </Route>
 
       <Route

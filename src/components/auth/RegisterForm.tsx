@@ -114,7 +114,7 @@ export const RegisterForm = () => {
           <span className="w-full border-t" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white px-2 text-muted-foreground">
+          <span className="px-2 text-muted-foreground">
             OR CONTINUE WITH EMAIL
           </span>
         </div>

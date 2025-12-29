@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Users, User, LayoutDashboard, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/auth/useAuth";
@@ -13,20 +13,43 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
-const Header = () => {
+const PublicHeader = () => {
   const { isAuthenticated, logout } = useAuth();
   const { data: user } = useMe();
+  const location = useLocation();
 
-  const navLinks = [
-    { label: "How it Works", path: "#how-it-works" },
+  // Navigation links for not signed-in users
+  const publicNavLinks = [
+    { label: "How it Works", path: "/#how-it-works" },
     { label: "Browse Projects", path: "/projects" },
     { label: "Find Teams", path: "/teams" },
     { label: "About", path: "/about" },
   ];
 
+  // Navigation links for signed-in users on public pages
+  const signedInNavLinks = [
+    { label: "Projects", path: "/projects" },
+    { label: "Messages", path: "/messages" },
+    { label: "Invitations", path: "/projects/invitations" },
+    { label: "Home", path: "/" },
+  ];
+
+  const isActive = (path: string) => {
+    // Handle hash links (e.g., /#how-it-works)
+    if (path.includes("#")) {
+      const pathWithoutHash = path.split("#")[0];
+      return location.pathname === pathWithoutHash;
+    }
+    if (path === "/") {
+      return location.pathname === "/";
+    }
+    return location.pathname.startsWith(path);
+  };
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="fixed top-0 left-0 right-0 z-[100] w-full border-b bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80 shadow-sm">
       <div className="container mx-auto px-4 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
@@ -39,15 +62,31 @@ const Header = () => {
 
           {/* Navigation Links */}
           <nav className="hidden items-center gap-6 md:flex">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                className="text-sm font-medium text-foreground transition-colors hover:text-[var(--purple)]"
-              >
-                {link.label}
-              </Link>
-            ))}
+            {isAuthenticated && user
+              ? signedInNavLinks.map((link) => (
+                  <Link
+                    key={link.path}
+                    to={link.path}
+                    className={cn(
+                      "text-sm font-medium transition-colors hover:text-[var(--purple)]",
+                      isActive(link.path) && "text-primary"
+                    )}
+                  >
+                    {link.label}
+                  </Link>
+                ))
+              : publicNavLinks.map((link) => (
+                  <Link
+                    key={link.path}
+                    to={link.path}
+                    className={cn(
+                      "text-sm font-medium transition-colors hover:text-[var(--purple)]",
+                      isActive(link.path) && "text-primary"
+                    )}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
           </nav>
 
           {/* Auth Buttons */}
@@ -142,4 +181,4 @@ const Header = () => {
   );
 };
 
-export default Header;
+export default PublicHeader;

@@ -17,6 +17,13 @@ class AuthService {
   private readonly USER_KEY = "auth_user";
   private readonly EXPIRES_IN_KEY = "auth_expires_in";
   private readonly REFRESH_TOKEN_EXPIRY_KEY = "auth_refresh_token_expiry";
+  
+  /**
+   * Check if a refresh is currently in progress
+   */
+  isRefreshing(): boolean {
+    return this.refreshPromise !== null;
+  }
 
   /**
    * Get stored access token
