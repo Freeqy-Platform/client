@@ -146,3 +146,10 @@
   background-color: var(--primary);
   color: var(--primary-foreground);
 }
+
+/* Ensure Radix UI portals work correctly */
+[data-radix-popper-content-wrapper] {
+  z-index: 50 !important;
+  pointer-events: auto !important;
+}
+

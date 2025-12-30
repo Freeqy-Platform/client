@@ -90,16 +90,35 @@ export const EmailVerificationForm = () => {
     return (
       <div className="w-full space-y-6">
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold text-destructive">Invalid Link</h1>
-          <p className="text-muted-foreground">
-            This verification link is invalid or has expired.
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--purple)]/10">
+            <Mail className="h-6 w-6 text-[var(--purple)]" />
+          </div>
+          <h1 className="text-3xl font-bold text-foreground">Check your email</h1>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            We've sent you a verification email. Please check your inbox and click the verification link to activate your account.
           </p>
         </div>
-        <Link to="/register" className="block">
-          <Button className="w-full bg-[var(--purple)] text-[var(--purple-foreground)] hover:bg-[var(--purple)]/90 h-11 text-base font-semibold">
-            Register Again
-          </Button>
-        </Link>
+
+        <div className="space-y-3">
+          <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">
+            <p className="font-medium mb-2">Didn't receive the email?</p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>Check your spam or junk folder</li>
+              <li>Make sure you entered the correct email address</li>
+              <li>Wait a few minutes for the email to arrive</li>
+            </ul>
+          </div>
+
+          <Link to="/login" className="block">
+            <Button
+              variant="outline"
+              className="w-full h-11 text-base font-semibold"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Sign In
+            </Button>
+          </Link>
+        </div>
       </div>
     );
   }

@@ -38,7 +38,7 @@ export const useLogin = () => {
       // Fetch full user profile from /me endpoint
       try {
         const fullUser = await userService.getMe();
-        
+
         // Update auth data with full user profile
         authService.updateUser(fullUser);
 
@@ -86,7 +86,7 @@ export const useRegister = () => {
       toast.success(
         "Registration successful! Please check your email for verification."
       );
-      navigate("/auth/verify-email");
+      navigate("/emailConfirmation");
     },
     onError: (error) => {
       // Error handling is done in the form component via setFormErrors

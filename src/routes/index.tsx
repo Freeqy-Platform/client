@@ -56,48 +56,48 @@ const MainRouter = () => {
         <Route index element={<NotFound />} />
       </Route>
 
-      <Route
-        path="/login"
-        element={
-          <AuthLayout variant="login">
-            <Login />
-          </AuthLayout>
-        }
-      />
-      <Route
-        path="/register"
-        element={
-          <AuthLayout variant="register">
-            <Register />
-          </AuthLayout>
-        }
-      />
-      <Route
-        path="/forgot-password"
-        element={
-          <AuthLayout variant="forgot">
-            <ForgotPassword />
-          </AuthLayout>
-        }
-      />
-      <Route
-        path="/resetPassword"
-        element={
-          <AuthLayout variant="reset">
-            <ResetPassword />
-          </AuthLayout>
-        }
-      />
-      <Route
-        path="/emailConfirmation"
-        element={
-          <AuthLayout variant="verify">
-            <VerifyEmail />
-          </AuthLayout>
-        }
-      />
-    </Routes>
-  );
+            <Route
+                path="/login"
+                element={
+                    <AuthLayout variant="login">
+                        <Login />
+                    </AuthLayout>
+                }
+            />
+            <Route
+                path="/register"
+                element={
+                    <AuthLayout variant="register">
+                        <Register />
+                    </AuthLayout>
+                }
+            />
+            <Route
+                path="/forgot-password"
+                element={
+                    <AuthLayout variant="forgot">
+                        <ForgotPassword />
+                    </AuthLayout>
+                }
+            />
+            <Route
+                path="/resetPassword"
+                element={
+                    <AuthLayout variant="reset">
+                        <ResetPassword />
+                    </AuthLayout>
+                }
+            />
+            <Route
+                path="/emailConfirmation"
+                element={
+                    <AuthLayout variant="verify">
+                        <VerifyEmail />
+                    </AuthLayout>
+                }
+            />
+        </Routes>
+    );
 };
 
 export default MainRouter;
