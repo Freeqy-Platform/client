@@ -44,7 +44,9 @@ class ApiClient {
         }
 
         // Proactively refresh token if it's expired or expiring soon
-        // Only refresh if not already refreshing and we have a valid refresh token
+        // DISABLED: This was causing error toasts for users
+        // The reactive refresh (on 401) in response interceptor is sufficient
+        /*
         if (
           authService.isTokenExpiredOrExpiringSoon() &&
           !this.isRefreshing &&
@@ -60,6 +62,7 @@ class ApiClient {
             console.error("Proactive token refresh failed:", error);
           }
         }
+        */
 
         const token = authService.getToken();
         if (token && config.headers) {
