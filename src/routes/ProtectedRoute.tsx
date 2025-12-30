@@ -16,7 +16,7 @@ interface ProtectedRouteProps {
  * @param requireVerification - Whether to require email verification (default: false)
  * @param redirectTo - Custom redirect path (default: "/login")
  */
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   requireVerification = false,
   redirectTo = "/auth/login",
@@ -43,56 +43,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Redirect to email verification if verification is required but user is not verified
   if (requireVerification && user && !user.isEmailConfirmed) {
-    return <Navigate to="/auth/verify-email" state={{ from: location }} replace />;
+    return (
+      <Navigate to="/auth/verify-email" state={{ from: location }} replace />
+    );
   }
 
   // Render protected content
   return <>{children}</>;
-};
-
-/**
- * Higher-order component version of ProtectedRoute for easier usage
- *
- * @param Component - The component to protect
- * @param requireVerification - Whether to require email verification
- * @param redirectTo - Custom redirect path
- */
-export const withAuth = <P extends object>(
-  Component: React.ComponentType<P>,
-  requireVerification: boolean = false,
-  redirectTo: string = "/login"
-) => {
-  const WrappedComponent: React.FC<P> = (props) => {
-    return (
-      <ProtectedRoute
-        requireVerification={requireVerification}
-        redirectTo={redirectTo}
-      >
-        <Component {...props} />
-      </ProtectedRoute>
-    );
-  };
-
-  WrappedComponent.displayName = `withAuth(${
-    Component.displayName || Component.name
-  })`;
-  return WrappedComponent;
-};
-
-/**
- * Hook to check authentication status and get user info
- * Useful for conditional rendering in components
- */
-export const useAuthGuard = (requireVerification: boolean = false) => {
-  const { isAuthenticated, user, isLoading } = useAuth();
-
-  return {
-    isAuthenticated,
-    user,
-    isLoading,
-    isVerified: user?.isEmailConfirmed ?? false,
-    canAccess: isAuthenticated && (!requireVerification || user?.isEmailConfirmed),
-  };
 };
 
 export default ProtectedRoute;

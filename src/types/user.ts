@@ -8,13 +8,11 @@ export interface User {
   phoneNumber?: string;
   summary?: string;
   availability?: string;
-  // URL to the user's profile photo returned from the backend
   photoUrl?: string | null;
-  // Kept for backwards compatibility if other endpoints still use `photo`
-  photo?: string | null;
+  bannerPhotoUrl?: string | null;
   isEmailConfirmed?: boolean;
   skills?: Skill[];
-  socialLinks?: SocialLinks;
+  socialLinks?: SocialLinks | { socialLinks?: SocialLink[] } | SocialLink[];
   educations?: Education[];
   certificates?: Certificate[];
   track?: string;
@@ -32,7 +30,7 @@ export interface Skill {
 export interface SocialLinks {
   github?: string;
   linkedin?: string;
-  twitter?: string;
+  X?: string;
   portfolio?: string;
   website?: string;
 }
@@ -153,4 +151,3 @@ export interface ConfirmEmailRequest {
   userId: string;
   token: string;
 }
-

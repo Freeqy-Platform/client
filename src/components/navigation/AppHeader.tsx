@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Users, User, LayoutDashboard, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/auth/useAuth";
@@ -13,47 +13,68 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { useSidebarConfig } from "@/hooks/useSidebarConfig";
 
-const Header = () => {
-  const { isAuthenticated, logout } = useAuth();
+const AppHeader = () => {
+  const { logout } = useAuth();
   const { data: user } = useMe();
+  const location = useLocation();
+  const sidebarConfig = useSidebarConfig();
+  const hasSidebar = sidebarConfig !== null;
 
-  const navLinks = [
-    { label: "How it Works", path: "#how-it-works" },
+  // Navigation links for app pages
+  const appNavLinks = [
     { label: "Projects", path: "/projects" },
-    { label: "Find Teams", path: "/teams" },
-    { label: "About", path: "/about" },
+    { label: "Messages", path: "/messages" },
+    { label: "Invitations", path: "/projects/invitations" },
+    { label: "Home", path: "/" },
   ];
 
+  const isActive = (path: string) => {
+    if (path === "/") {
+      return location.pathname === "/";
+    }
+    return location.pathname.startsWith(path);
+  };
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="fixed top-0 left-0 right-0 z-[100] w-full border-b bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80 shadow-sm">
       <div className="container mx-auto px-4 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--purple)] text-[var(--purple-foreground)]">
-              <Users className="h-5 w-5" />
-            </div>
-            <span className="text-xl font-bold text-foreground">Freeqy</span>
-          </Link>
+          {/* Sidebar Toggle - Only show when sidebar exists */}
+          <div className="flex items-center gap-2">
+            {hasSidebar && <SidebarTrigger className="md:inline-flex" />}
+            {/* Logo */}
+            <Link to="/" className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--purple)] text-[var(--purple-foreground)]">
+                <Users className="h-5 w-5" />
+              </div>
+              <span className="text-xl font-bold text-foreground">Freeqy</span>
+            </Link>
+          </div>
 
           {/* Navigation Links */}
           <nav className="hidden items-center gap-6 md:flex">
-            {navLinks.map((link) => (
+            {appNavLinks.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
-                className="text-sm font-medium text-foreground transition-colors hover:text-[var(--purple)]"
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-[var(--purple)]",
+                  isActive(link.path) && "text-primary"
+                )}
               >
                 {link.label}
               </Link>
             ))}
           </nav>
 
-          {/* Auth Buttons */}
+          {/* User Menu */}
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            {isAuthenticated && user ? (
+            {user && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -63,8 +84,8 @@ const Header = () => {
                     <Avatar className="h-9 w-9">
                       {user.photoUrl && (
                         <AvatarImage
-                          src={user.photoUrl}
                           className="object-cover"
+                          src={user.photoUrl}
                           alt={`${user.firstName} ${user.lastName}`}
                         />
                       )}
@@ -114,26 +135,6 @@ const Header = () => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            ) : (
-              <>
-                <Link to="/login">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="hidden sm:inline-flex"
-                  >
-                    Sign In
-                  </Button>
-                </Link>
-                <Link to="/register">
-                  <Button
-                    size="sm"
-                    className="bg-[var(--purple)] text-[var(--purple-foreground)] hover:bg-[var(--purple)]/90"
-                  >
-                    Get Started
-                  </Button>
-                </Link>
-              </>
             )}
           </div>
         </div>
@@ -142,4 +143,4 @@ const Header = () => {
   );
 };
 
-export default Header;
+export default AppHeader;

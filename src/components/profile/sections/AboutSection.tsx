@@ -41,7 +41,8 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
 
   React.useEffect(() => {
     form.reset({ summary: user.summary || "" });
-  }, [user, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user.summary]);
 
   const onSubmit = async (data: UpdateSummaryRequest) => {
     try {

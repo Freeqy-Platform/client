@@ -42,10 +42,10 @@ export const CertificatesSection: React.FC<CertificatesSectionProps> = ({
   });
 
   React.useEffect(() => {
-    form.reset({
-      certificates: (user.certificates as UpdateCertificatesRequest["certificates"]) || [],
-    });
-  }, [user, form]);
+    const certificates = (user.certificates as UpdateCertificatesRequest["certificates"]) || [];
+    form.reset({ certificates });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user.certificates]);
 
   const onSubmit = async (data: UpdateCertificatesRequest) => {
     try {

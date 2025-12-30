@@ -393,3 +393,53 @@ export const useDeletePhoto = () => {
     },
   });
 };
+
+/**
+ * POST /api/Users/me/banner-photo
+ * Upload banner photo
+ */
+export const useUploadBannerPhoto = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (file: File) => userService.uploadBannerPhoto(file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["user", "banner-photo"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.auth.user, "me"],
+      });
+      toast.success("Banner photo uploaded successfully");
+    },
+    onError: (error) => {
+      const message = extractErrorMessage(error);
+      toast.error(message || "Failed to upload banner photo");
+    },
+  });
+};
+
+/**
+ * DELETE /api/Users/me/banner-photo
+ * Delete banner photo
+ */
+export const useDeleteBannerPhoto = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => userService.deleteBannerPhoto(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["user", "banner-photo"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.auth.user, "me"],
+      });
+      toast.success("Banner photo deleted successfully");
+    },
+    onError: (error) => {
+      const message = extractErrorMessage(error);
+      toast.error(message || "Failed to delete banner photo");
+    },
+  });
+};

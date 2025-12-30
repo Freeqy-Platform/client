@@ -110,6 +110,21 @@ export const userService = {
     await apiClient.delete("/Users/me/photo");
   },
 
+  uploadBannerPhoto: async (file: File): Promise<void> => {
+    const formData = new FormData();
+    formData.append("BannerPhoto", file);
+
+    await apiClient.post("/Users/me/banner-photo", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  },
+
+  deleteBannerPhoto: async (): Promise<void> => {
+    await apiClient.delete("/Users/me/banner-photo");
+  },
+
   updateSkills: async (data: UpdateUserSkillsRequest): Promise<void> => {
     await apiClient.post("/Users/me/skills", data);
   },
