@@ -9,6 +9,7 @@ import About from "../pages/About";
 import Blog from "../pages/Blog";
 import Help from "../pages/Help";
 import Dashboard from "../pages/dashboard/Dashboard";
+import ProjectsPage from "../pages/dashboard/ProjectsPage";
 import PrivacyPolicy from "../pages/PrivacyPolicy";
 import TermsOfService from "../pages/TermsOfService";
 import Register from "../pages/auth/Register";
@@ -17,6 +18,7 @@ import ForgotPassword from "../pages/auth/forgot-password";
 import ResetPassword from "../pages/auth/reset-password";
 import VerifyEmail from "../pages/auth/verify-email";
 import ProfilePage from "@/pages/users/ProfilePage";
+import SettingsPage from "@/pages/users/SettingsPage";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 
 const MainRouter = () => {
@@ -41,7 +43,9 @@ const MainRouter = () => {
         }
       >
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard/projects" element={<ProjectsPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/profile/settings" element={<SettingsPage />} />
         {/* Messages, Projects, and Invitations routes will have MinimalFooter when added */}
         {/* <Route path="/messages" element={<Messages />} /> */}
         {/* <Route path="/projects" element={<Projects />} /> */}

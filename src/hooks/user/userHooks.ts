@@ -17,6 +17,11 @@ import type {
   UpdatePasswordRequest,
   UsersListQueryParams,
   ConfirmEmailRequest,
+  UpdateTrackRequest,
+  UpdateTrackWithConfirmRequest,
+  CreateTrackRequestDto,
+  ApproveTrackRequestDto,
+  RejectTrackRequestDto,
 } from "../../types/user";
 
 /**
@@ -440,6 +445,187 @@ export const useDeleteBannerPhoto = () => {
     onError: (error) => {
       const message = extractErrorMessage(error);
       toast.error(message || "Failed to delete banner photo");
+    },
+  });
+};
+
+// Track hooks
+/**
+ * GET /api/Users/tracks
+ * Get all available tracks
+ */
+export const useTracks = () => {
+  return useQuery({
+    queryKey: ["tracks"],
+    queryFn: () => userService.getTracks(),
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
+};
+
+/**
+ * PUT /api/Users/me/track
+ * Update user's track
+ */
+export const useUpdateTrack = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdateTrackRequest) => userService.updateTrack(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.auth.user, "me"],
+      });
+      toast.success("Track updated successfully");
+    },
+    onError: (error) => {
+      const message = extractErrorMessage(error);
+      toast.error(message || "Failed to update track");
+    },
+  });
+};
+
+/**
+ * PUT /api/Users/me/track/smart
+ * Smart update with auto-create option
+ */
+export const useUpdateTrackSmart = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdateTrackWithConfirmRequest) =>
+      userService.updateTrackSmart(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.auth.user, "me"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["tracks"],
+      });
+      toast.success("Track updated successfully");
+    },
+    onError: (error) => {
+      const message = extractErrorMessage(error);
+      toast.error(message || "Failed to update track");
+    },
+  });
+};
+
+// Track Request hooks (User)
+/**
+ * GET /api/Users/me/track-requests/stats
+ * Get track request stats
+ */
+export const useTrackRequestStats = () => {
+  return useQuery({
+    queryKey: ["track-requests", "stats"],
+    queryFn: () => userService.getTrackRequestStats(),
+    staleTime: 1 * 60 * 1000, // 1 minute
+  });
+};
+
+/**
+ * GET /api/Users/me/track-requests
+ * Get user's track requests
+ */
+export const useMyTrackRequests = () => {
+  return useQuery({
+    queryKey: ["track-requests", "me"],
+    queryFn: () => userService.getMyTrackRequests(),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+};
+
+/**
+ * POST /api/Users/track-requests
+ * Create track request
+ */
+export const useCreateTrackRequest = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateTrackRequestDto) =>
+      userService.createTrackRequest(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["track-requests", "me"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["track-requests", "stats"],
+      });
+      toast.success("Track request submitted successfully");
+    },
+    onError: (error) => {
+      const message = extractErrorMessage(error);
+      // Handle 429 error specifically
+      if (message?.includes("DailyLimitExceeded") || message?.includes("429")) {
+        toast.error(
+          "You can only submit one track request per day. Please try again tomorrow."
+        );
+      } else {
+        toast.error(message || "Failed to submit track request");
+      }
+    },
+  });
+};
+
+// Track Request hooks (Admin)
+/**
+ * GET /api/Users/track-requests
+ * Get all track requests (admin only)
+ */
+export const useAllTrackRequests = () => {
+  return useQuery({
+    queryKey: ["track-requests", "all"],
+    queryFn: () => userService.getAllTrackRequests(),
+    staleTime: 1 * 60 * 1000, // 1 minute
+  });
+};
+
+/**
+ * POST /api/Users/track-requests/approve
+ * Approve track request (admin only)
+ */
+export const useApproveTrackRequest = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: ApproveTrackRequestDto) =>
+      userService.approveTrackRequest(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["track-requests", "all"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["tracks"],
+      });
+      toast.success("Track request approved successfully");
+    },
+    onError: (error) => {
+      const message = extractErrorMessage(error);
+      toast.error(message || "Failed to approve track request");
+    },
+  });
+};
+
+/**
+ * POST /api/Users/track-requests/reject
+ * Reject track request (admin only)
+ */
+export const useRejectTrackRequest = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: RejectTrackRequestDto) =>
+      userService.rejectTrackRequest(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["track-requests", "all"],
+      });
+      toast.success("Track request rejected successfully");
+    },
+    onError: (error) => {
+      const message = extractErrorMessage(error);
+      toast.error(message || "Failed to reject track request");
     },
   });
 };

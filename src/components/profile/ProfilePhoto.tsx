@@ -56,7 +56,7 @@ export const ProfilePhoto: React.FC<ProfilePhotoProps> = ({
             {initials}
           </AvatarFallback>
         </Avatar>
-        <label className="absolute w-32 h-32 sm:w-40 sm:h-40 inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-all cursor-pointer rounded-full backdrop-blur-xl">
+        <label className="absolute w-32 h-32 sm:w-40 sm:h-40 inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-all cursor-pointer rounded-full backdrop-blur-xs">
           <input
             type="file"
             accept="image/*"

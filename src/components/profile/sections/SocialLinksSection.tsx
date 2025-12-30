@@ -20,6 +20,50 @@ import {
   getSocialMediaIcon,
 } from "@/lib/utils/profileUtils";
 
+// Get platform-specific hover color
+const getPlatformHoverColor = (platform: string): string => {
+  const platformLower = platform.toLowerCase().trim();
+  
+  switch (platformLower) {
+    case "linkedin":
+      return "#0077b5"; // LinkedIn blue
+    case "github":
+      return "#181717"; // GitHub black
+    case "x":
+    case "twitter":
+      return "#000000"; // X/Twitter black
+    case "facebook":
+      return "#1877F2"; // Facebook blue
+    case "instagram":
+      return "#E4405F"; // Instagram pink/red
+    case "youtube":
+      return "#FF0000"; // YouTube red
+    case "tiktok":
+      return "#000000"; // TikTok black
+    case "discord":
+      return "#5865F2"; // Discord blurple
+    case "whatsapp":
+      return "#25D366"; // WhatsApp green
+    case "telegram":
+      return "#0088cc"; // Telegram blue
+    case "upwork":
+      return "#6FDA44"; // Upwork green
+    case "fiverr":
+      return "#1DBF73"; // Fiverr green
+    case "behance":
+      return "#1769FF"; // Behance blue
+    case "dribbble":
+      return "#EA4C89"; // Dribbble pink
+    case "medium":
+      return "#000000"; // Medium black
+    case "stack overflow":
+    case "stackoverflow":
+      return "#F48024"; // Stack Overflow orange
+    default:
+      return "var(--purple)"; // Default primary purple
+  }
+};
+
 interface SocialLinksSectionProps {
   user: User;
   onUpdate: (data: UpdateSocialLinksRequest) => Promise<void>;
@@ -98,15 +142,27 @@ export const SocialLinksSection: React.FC<SocialLinksSectionProps> = ({
           <div className="flex flex-wrap gap-3">
             {socialLinksArray.map((link: SocialLink, index: number) => {
               const IconComponent = getSocialMediaIcon(link.platform);
+              const hoverColor = getPlatformHoverColor(link.platform);
               return (
                 <a
                   key={index}
                   href={link.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2.5 text-sm font-medium text-foreground hover:text-[var(--purple)] transition-colors px-4 py-2.5 rounded-lg border border-border hover:border-[var(--purple)] hover:bg-muted/50"
+                  className="inline-flex items-center gap-2.5 text-sm font-medium text-foreground transition-colors px-4 py-2.5 rounded-lg border border-border hover:bg-muted/50 group"
+                  style={{
+                    '--hover-color': hoverColor,
+                  } as React.CSSProperties & { '--hover-color': string }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = hoverColor;
+                    e.currentTarget.style.borderColor = hoverColor;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = '';
+                    e.currentTarget.style.borderColor = '';
+                  }}
                 >
-                  <IconComponent className="h-5 w-5 shrink-0" />
+                  <IconComponent className="h-5 w-5 shrink-0 transition-colors" />
                   <span>{link.platform}</span>
                 </a>
               );

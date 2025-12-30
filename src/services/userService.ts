@@ -15,6 +15,14 @@ import type {
   UsersListQueryParams,
   UsersListResponse,
   ConfirmEmailRequest,
+  Track,
+  TrackRequest,
+  TrackRequestStats,
+  UpdateTrackRequest,
+  UpdateTrackWithConfirmRequest,
+  CreateTrackRequestDto,
+  ApproveTrackRequestDto,
+  RejectTrackRequestDto,
 } from "../types/user";
 
 /**
@@ -179,5 +187,104 @@ export const userService = {
       token: data.token,
     });
     await apiClient.post(`/Users/confirm-email?${queryParams.toString()}`);
+  },
+
+  // Track Management
+  /**
+   * PUT /api/Users/me/track
+   * Update user's track
+   */
+  updateTrack: async (data: UpdateTrackRequest): Promise<void> => {
+    await apiClient.put("/Users/me/track", data);
+  },
+
+  /**
+   * GET /api/Users/tracks
+   * Get all available tracks
+   */
+  getTracks: async (): Promise<Track[]> => {
+    return apiClient.get<Track[]>("/Users/tracks");
+  },
+
+  /**
+   * PUT /api/Users/me/track/smart
+   * Smart update with auto-create option
+   */
+  updateTrackSmart: async (
+    data: UpdateTrackWithConfirmRequest
+  ): Promise<void> => {
+    await apiClient.put("/Users/me/track/smart", data);
+  },
+
+  // Track Requests (User)
+  /**
+   * POST /api/Users/track-requests
+   * Create a new track request
+   */
+  createTrackRequest: async (
+    data: CreateTrackRequestDto
+  ): Promise<TrackRequest> => {
+    return apiClient.post<TrackRequest>("/Users/track-requests", data);
+  },
+
+  /**
+   * GET /api/Users/me/track-requests/stats
+   * Get track request stats for current user
+   */
+  getTrackRequestStats: async (): Promise<TrackRequestStats> => {
+    return apiClient.get<TrackRequestStats>(
+      "/Users/me/track-requests/stats"
+    );
+  },
+
+  /**
+   * GET /api/Users/me/track-requests
+   * Get all track requests submitted by current user
+   */
+  getMyTrackRequests: async (): Promise<TrackRequest[]> => {
+    const response = await apiClient.get<TrackRequest[] | { data?: TrackRequest[] }>("/Users/me/track-requests");
+    // Handle case where API might return wrapped response
+    if (Array.isArray(response)) {
+      return response;
+    }
+    if (response && typeof response === 'object' && 'data' in response && Array.isArray(response.data)) {
+      return response.data;
+    }
+    return [];
+  },
+
+  // Track Requests (Admin)
+  /**
+   * GET /api/Users/track-requests
+   * Get all track requests (admin only)
+   */
+  getAllTrackRequests: async (): Promise<TrackRequest[]> => {
+    const response = await apiClient.get<TrackRequest[] | { data?: TrackRequest[] }>("/Users/track-requests");
+    // Handle case where API might return wrapped response
+    if (Array.isArray(response)) {
+      return response;
+    }
+    if (response && typeof response === 'object' && 'data' in response && Array.isArray(response.data)) {
+      return response.data;
+    }
+    return [];
+  },
+
+  /**
+   * POST /api/Users/track-requests/approve
+   * Approve a track request (admin only)
+   */
+  approveTrackRequest: async (
+    data: ApproveTrackRequestDto
+  ): Promise<void> => {
+    await apiClient.post("/Users/track-requests/approve", data);
+  },
+
+  /**
+   * POST /api/Users/track-requests/reject
+   * Reject a track request (admin only)
+   */
+  rejectTrackRequest: async (data: RejectTrackRequestDto): Promise<void> => {
+    await apiClient.post("/Users/track-requests/reject", data);
   },
 };

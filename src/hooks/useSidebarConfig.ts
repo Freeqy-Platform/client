@@ -64,13 +64,28 @@ export const useSidebarConfig = (): SidebarConfig | null => {
   }
 
   // Regular app sidebar config (for profile, projects, messages, etc.)
+  const navigationLinks = [
+    { label: "Profile", path: "/profile", icon: User },
+  ];
+
+  // Add Settings link if on profile pages
+  if (location.pathname.startsWith("/profile")) {
+    navigationLinks.push({
+      label: "Settings",
+      path: "/profile/settings",
+      icon: Settings,
+    });
+  }
+
+  // Add other navigation links
+  navigationLinks.push(
+    { label: "Projects", path: "/projects", icon: FolderKanban },
+    { label: "Messages", path: "/messages", icon: MessageSquare },
+    { label: "Invitations", path: "/projects/invitations", icon: Mail }
+  );
+
   return {
-    navigationLinks: [
-      { label: "Profile", path: "/profile", icon: User },
-      { label: "Projects", path: "/projects", icon: FolderKanban },
-      { label: "Messages", path: "/messages", icon: MessageSquare },
-      { label: "Invitations", path: "/projects/invitations", icon: Mail },
-    ],
+    navigationLinks,
     actionLinks: [
       { label: "Start New Project", path: "/projects/new", icon: PlusCircle },
       { label: "My Projects", path: "/projects/my", icon: FolderOpen },

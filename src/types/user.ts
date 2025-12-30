@@ -151,3 +151,54 @@ export interface ConfirmEmailRequest {
   userId: string;
   token: string;
 }
+
+// Track Types
+export interface Track {
+  id: number;
+  name: string;
+}
+
+export interface TrackRequest {
+  id: number;
+  trackName: string;
+  status: "Pending" | "Approved" | "Rejected";
+  rejectionReason?: string;
+  requestedAt: string;
+  processedAt?: string;
+  requestedBy?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+}
+
+export interface TrackRequestStats {
+  requestsUsedThisMonth: number;
+  nextRequestAllowedAt?: string;
+  dailyLimitExceeded: boolean;
+}
+
+export interface UpdateTrackRequest {
+  trackName: string;
+}
+
+export interface UpdateTrackWithConfirmRequest {
+  proposedTrackName: string;
+  confirmCreate: boolean;
+}
+
+export interface CreateTrackRequestDto {
+  trackName: string;
+}
+
+export interface ApproveTrackRequestDto {
+  requestId: number;
+  createNewTrack: boolean;
+  mergeIntoTrackId?: number;
+}
+
+export interface RejectTrackRequestDto {
+  requestId: number;
+  rejectionReason: string;
+}

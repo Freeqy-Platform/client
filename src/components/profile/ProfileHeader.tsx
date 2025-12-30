@@ -19,6 +19,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { profileSchema } from "../../lib/validations/profileSchemas";
 import type { User, UpdateUserProfileRequest } from "../../types/user";
+import { TrackSelector } from "./TrackSelector";
 
 interface ProfileHeaderProps {
   user: User;
@@ -129,10 +130,14 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                       <FormItem>
                         <FormLabel className="text-sm">Track</FormLabel>
                         <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="e.g., Frontend, Backend"
-                            className="h-9"
+                          <TrackSelector
+                            value={field.value}
+                            onChange={(trackName) => {
+                              field.onChange(trackName);
+                            }}
+                            onCancel={() => {
+                              form.resetField("track");
+                            }}
                           />
                         </FormControl>
                         <FormMessage />
