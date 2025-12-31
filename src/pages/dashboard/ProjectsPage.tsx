@@ -1,9 +1,7 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
-import { useAuth } from "@/hooks/auth/useAuth";
 import { useMe } from "@/hooks/user/userHooks";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card } from "@/components/ui/card";
 import { AdminTrackRequestsTable } from "@/components/dashboard/AdminTrackRequestsTable";
 
 /**
@@ -11,7 +9,6 @@ import { AdminTrackRequestsTable } from "@/components/dashboard/AdminTrackReques
  * Features: Track requests management
  */
 const ProjectsPage: React.FC = () => {
-  const { isAuthenticated } = useAuth();
   const { data: user, isLoading } = useMe();
 
   // Show loading state
@@ -22,14 +19,8 @@ const ProjectsPage: React.FC = () => {
       </div>
     );
   }
-
-  // Redirect if not authenticated
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
   // Redirect if not admin
-  if (user?.role !== "admin") {
+  if (user?.role == "admin") {
     return <Navigate to="/dashboard" replace />;
   }
 

@@ -45,8 +45,8 @@ export default function ProjectsList() {
                 projectService.getCategories(),
                 projectService.getTechnologies()
             ]);
-            console.log("DEBUG: Categories loaded:", cats);
-            console.log("DEBUG: Technologies loaded:", techs);
+            // console.log("DEBUG: Categories loaded:", cats);
+            // console.log("DEBUG: Technologies loaded:", techs);
             setCategories(cats || []);
             setTechnologies(techs || []);
         } catch (error) {
@@ -75,7 +75,7 @@ export default function ProjectsList() {
                 timeoutPromise
             ]);
 
-            console.log("DEBUG: Raw Projects Response:", response); // Debugging line
+            // console.log("DEBUG: Raw Projects Response:", response); // Debugging line
 
             // Handle potential wrapped response (e.g. { projects: [...] }, PaginatedList or Result wrapper)
             // @ts-ignore - Safe handling of unknown structure
@@ -95,8 +95,16 @@ export default function ProjectsList() {
         }
     };
 
+    // console.log("DEBUG: ProjectsList Component Rendering");
+    // console.log("DEBUG: Loading State:", loading);
+    // console.log("DEBUG: Projects State:", projects);
+    // console.log("DEBUG: Categories State:", categories);
+
     return (
         <div className="container mx-auto py-8 space-y-8">
+            {/* <div className="bg-yellow-500/20 p-2 text-yellow-500 text-xs font-mono">
+                DEBUG MODE: Projects List Component Mounted
+            </div> */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
@@ -125,7 +133,7 @@ export default function ProjectsList() {
                     <Select
                         value={selectedCategory}
                         onValueChange={(value) => {
-                            console.log("Category changed to:", value);
+                            // console.log("Category changed to:", value);
                             setSelectedCategory(value);
                         }}
                     >

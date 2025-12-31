@@ -19,42 +19,45 @@ import ResetPassword from "../pages/auth/reset-password";
 import VerifyEmail from "../pages/auth/verify-email";
 import ProfilePage from "@/pages/users/ProfilePage";
 import SettingsPage from "@/pages/users/SettingsPage";
+import ProjectsList from "@/pages/projects/ProjectsList";
+import ProjectDetails from "@/pages/projects/ProjectDetails";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 
 const MainRouter = () => {
-  return (
-    <Routes>
-      {/* Public Pages - Use PublicLayout */}
-      <Route path="/" element={<PublicLayout />}>
-        <Route index element={<Home />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/blog" element={<Blog />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/privacy" element={<PrivacyPolicy />} />
-        <Route path="/terms" element={<TermsOfService />} />
-        <Route path="/help" element={<Help />} />
-      </Route>
+    return (
+        <Routes>
+            {/* Public Pages - Use PublicLayout */}
+            <Route path="/" element={<PublicLayout />}>
+                <Route index element={<Home />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<TermsOfService />} />
+                <Route path="/help" element={<Help />} />
+            </Route>
 
-      <Route
-        element={
-          <ProtectedRoute>
-            <AppLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/dashboard/projects" element={<ProjectsPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/profile/settings" element={<SettingsPage />} />
-        {/* Messages, Projects, and Invitations routes will have MinimalFooter when added */}
-        {/* <Route path="/messages" element={<Messages />} /> */}
-        {/* <Route path="/projects" element={<Projects />} /> */}
-        {/* <Route path="/projects/invitations" element={<Invitations />} /> */}
-      </Route>
+            <Route
+                element={
+                    <ProtectedRoute>
+                        <AppLayout />
+                    </ProtectedRoute>
+                }
+            >
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/dashboard/projects" element={<ProjectsPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/profile/settings" element={<SettingsPage />} />
+                {/* Messages, Projects, and Invitations routes will have MinimalFooter when added */}
+                {/* <Route path="/messages" element={<Messages />} /> */}
+                <Route path="/projects" element={<ProjectsList />} />
+                <Route path="/projects/:projectId" element={<ProjectDetails />} />
+                {/* <Route path="/projects/invitations" element={<Invitations />} /> */}
+            </Route>
 
-      <Route path="*" element={<PublicLayout />}>
-        <Route index element={<NotFound />} />
-      </Route>
+            <Route path="*" element={<PublicLayout />}>
+                <Route index element={<NotFound />} />
+            </Route>
 
             <Route
                 path="/login"
