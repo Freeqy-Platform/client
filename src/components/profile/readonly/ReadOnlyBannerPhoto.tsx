@@ -12,12 +12,12 @@ export const ReadOnlyBannerPhoto: React.FC<ReadOnlyBannerPhotoProps> = ({
 
   // Always render a container, even if no banner, to maintain layout
   return (
-    <div className="w-full h-64 sm:h-72 rounded-lg overflow-hidden bg-muted">
+    <div className="w-full h-64 sm:h-72 overflow-hidden bg-muted">
       {bannerUrl ? (
         <img
           src={bannerUrl}
           alt={`${user.firstName} ${user.lastName}'s banner`}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover object-center"
         />
       ) : (
         <div className="w-full h-full bg-muted" />

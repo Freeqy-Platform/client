@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { projectService } from "@/services/projectService";
 import type { Project, Category, Technology } from "@/types/projects";
 import { ProjectCard } from "@/components/projects/ProjectCard";
@@ -12,13 +13,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Loader2 } from "lucide-react";
+import { Plus, Search, Loader2, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useDebounce } from "@/hooks/use-debounce";
 import { toast } from "sonner";
 import { ProjectStatus, ProjectVisibility } from "@/types/projects";
 import { useMe } from "@/hooks/user/userHooks";
 
 export default function ProjectsList() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: currentUser } = useMe();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,6 +42,18 @@ export default function ProjectsList() {
   useEffect(() => {
     fetchProjects();
   }, [debouncedSearch, selectedCategory, selectedStatus]);
+
+  // Check for create query parameter and open dialog
+  useEffect(() => {
+    const shouldCreate = searchParams.get("create") === "true";
+    if (shouldCreate) {
+      setCreateOpen(true);
+      // Remove the query parameter from URL
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete("create");
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const fetchMetadata = async () => {
     try {
@@ -122,10 +137,18 @@ export default function ProjectsList() {
             Manage and track your projects effectively.
           </p>
         </div>
-        <Button onClick={() => setCreateOpen(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          New Project
-        </Button>
+        <div className="flex gap-2">
+          <Link to="/projects/analyze">
+            <Button variant="outline" className="gap-2">
+              <Sparkles className="h-4 w-4" />
+              AI Analyzer
+            </Button>
+          </Link>
+          <Button onClick={() => setCreateOpen(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            New Project
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 items-center">

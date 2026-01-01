@@ -2,7 +2,8 @@ import React from "react";
 import { Card, CardContent, CardHeader } from "../ui/card";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
-import { Mail, Phone, Calendar, MapPin, CheckCircle2, Edit } from "lucide-react";
+import { Mail, Phone, Calendar, MapPin, CheckCircle2, Edit, Loader2 } from "lucide-react";
+import { getAvailabilityColor } from "../../lib/utils/availabilityUtils";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +16,13 @@ import {
 import { Form } from "../ui/form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "../ui/form";
 import { Input } from "../ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { profileSchema } from "../../lib/validations/profileSchemas";
@@ -37,20 +45,27 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   const form = useForm<UpdateUserProfileRequest>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      FirstName: user.firstName || "",
-      LastName: user.lastName || "",
-      track: user.track || "",
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      phoneNumber: user.phoneNumber || "",
+      availability: user.availability || "",
+      trackName: user.track || "",
     },
   });
 
+  // Update form when user data changes (reactively from React Query)
   React.useEffect(() => {
-    form.reset({
-      FirstName: user.firstName || "",
-      LastName: user.lastName || "",
-      track: user.track || "",
-    });
+    if (user) {
+      form.reset({
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        phoneNumber: user.phoneNumber || "",
+        availability: user.availability || "",
+        trackName: user.track || "",
+      });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user.firstName, user.lastName, user.track]);
+  }, [user?.firstName, user?.lastName, user?.phoneNumber, user?.availability, user?.track]);
 
   const onSubmit = async (data: UpdateUserProfileRequest) => {
     try {
@@ -92,14 +107,14 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               <DialogHeader>
                 <DialogTitle className="text-xl">Edit Profile</DialogTitle>
                 <DialogDescription className="text-sm">
-                  Update your name and track information.
+                  Update your profile information.
                 </DialogDescription>
               </DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
                   <FormField
                     control={form.control}
-                    name="FirstName"
+                    name="firstName"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm">First Name</FormLabel>
@@ -112,7 +127,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                   />
                   <FormField
                     control={form.control}
-                    name="LastName"
+                    name="lastName"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm">Last Name</FormLabel>
@@ -125,18 +140,56 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                   />
                   <FormField
                     control={form.control}
-                    name="track"
+                    name="phoneNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm">Phone Number</FormLabel>
+                        <FormControl>
+                          <Input {...field} className="h-9" placeholder="+1234567890" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="availability"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm">Availability</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || ""}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="h-9">
+                              <SelectValue placeholder="Select availability" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Available">Available</SelectItem>
+                            <SelectItem value="Busy">Busy</SelectItem>
+                            <SelectItem value="NotAvailable">Not Available</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="trackName"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm">Track</FormLabel>
                         <FormControl>
                           <TrackSelector
-                            value={field.value}
+                            value={field.value || ""}
                             onChange={(trackName) => {
                               field.onChange(trackName);
                             }}
                             onCancel={() => {
-                              form.resetField("track");
+                              form.resetField("trackName");
                             }}
                           />
                         </FormControl>
@@ -154,7 +207,14 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                       Cancel
                     </Button>
                     <Button type="submit" disabled={isUpdating} size="sm">
-                      {isUpdating ? "Saving..." : "Save"}
+                      {isUpdating ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        "Save"
+                      )}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -183,8 +243,11 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           {user.availability && (
             <div className="flex items-center gap-1.5">
               <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              <Badge variant="outline" className="text-xs font-normal">
-                {user.availability}
+              <Badge
+                variant="outline"
+                className={`text-xs font-normal ${getAvailabilityColor(user.availability)}`}
+              >
+                {user.availability === "NotAvailable" ? "Not Available" : user.availability}
               </Badge>
             </div>
           )}

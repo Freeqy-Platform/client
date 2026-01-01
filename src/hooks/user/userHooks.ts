@@ -3,7 +3,9 @@ import { toast } from "sonner";
 import { userService } from "../../services/userService";
 import { QUERY_KEYS } from "../../types/api";
 import { extractErrorMessage } from "../../lib/authApi";
+import { authService } from "../../services/authService";
 import type {
+  User,
   UpdateUserProfileRequest,
   UpdateUserSkillsRequest,
   UpdateSocialLinksRequest,
@@ -47,18 +49,93 @@ export const useUpdateProfile = () => {
   return useMutation({
     mutationFn: (data: UpdateUserProfileRequest) =>
       userService.updateProfile(data),
-    onSuccess: (data) => {
-      // Update query cache
-      queryClient.setQueryData([QUERY_KEYS.auth.user, "me"], data);
-      queryClient.setQueryData(QUERY_KEYS.auth.user, {
-        id: data.id,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
+    onMutate: async (newData) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({
+        queryKey: [QUERY_KEYS.auth.user, "me"],
       });
+
+      // Snapshot previous value
+      const previousUser = queryClient.getQueryData<User>([
+        QUERY_KEYS.auth.user,
+        "me",
+      ]);
+
+      // Optimistically update cache
+      if (previousUser) {
+        const optimisticUser: User = {
+          ...previousUser,
+          firstName: newData.firstName,
+          lastName: newData.lastName,
+          phoneNumber: newData.phoneNumber || previousUser.phoneNumber,
+          availability: newData.availability || previousUser.availability,
+          track: newData.trackName || previousUser.track,
+        };
+
+        queryClient.setQueryData([QUERY_KEYS.auth.user, "me"], optimisticUser);
+        queryClient.setQueryData(QUERY_KEYS.auth.user, {
+          id: optimisticUser.id,
+          firstName: optimisticUser.firstName,
+          lastName: optimisticUser.lastName,
+          email: optimisticUser.email,
+        });
+      }
+
+      return { previousUser };
+    },
+    onSuccess: (data) => {
+      // Get current user data to preserve email if not in response
+      const currentUser = queryClient.getQueryData<User>([
+        QUERY_KEYS.auth.user,
+        "me",
+      ]);
+      
+      // Merge response with current user data to preserve all fields
+      const updatedUser: User = {
+        ...currentUser,
+        ...data,
+        // Ensure email is preserved if not in response
+        email: data.email || currentUser?.email || "",
+        // Map trackName to track (API might return trackName or track)
+        track: (data as any).track || (data as any).trackName || currentUser?.track,
+        // Preserve other fields that might not be in response
+        phoneNumber: (data as any).phoneNumber || currentUser?.phoneNumber,
+        availability: (data as any).availability || currentUser?.availability,
+      };
+
+      // Update authService user data to keep localStorage in sync
+      authService.updateUser(updatedUser);
+
+      // Update query cache with server response
+      queryClient.setQueryData([QUERY_KEYS.auth.user, "me"], updatedUser);
+      queryClient.setQueryData(QUERY_KEYS.auth.user, {
+        id: updatedUser.id,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        email: updatedUser.email,
+      });
+      
+      // Invalidate to ensure fresh data
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.auth.user, "me"],
+      });
+      
       toast.success("Profile updated successfully");
     },
-    onError: (error) => {
+    onError: (error, _newData, context) => {
+      // Rollback on error
+      if (context?.previousUser) {
+        queryClient.setQueryData(
+          [QUERY_KEYS.auth.user, "me"],
+          context.previousUser
+        );
+        queryClient.setQueryData(QUERY_KEYS.auth.user, {
+          id: context.previousUser.id,
+          firstName: context.previousUser.firstName,
+          lastName: context.previousUser.lastName,
+          email: context.previousUser.email,
+        });
+      }
       const message = extractErrorMessage(error);
       toast.error(message || "Failed to update profile");
     },
@@ -124,13 +201,55 @@ export const useUpdateSocialLinks = () => {
   return useMutation({
     mutationFn: (data: UpdateSocialLinksRequest) =>
       userService.updateSocialLinks(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
+    onMutate: async (newData) => {
+      await queryClient.cancelQueries({
         queryKey: [QUERY_KEYS.auth.user, "me"],
       });
+
+      const previousUser = queryClient.getQueryData<User>([
+        QUERY_KEYS.auth.user,
+        "me",
+      ]);
+
+      // Optimistically update social links
+      if (previousUser) {
+        const optimisticUser: User = {
+          ...previousUser,
+          socialLinks: newData.socialLinks,
+        };
+        queryClient.setQueryData([QUERY_KEYS.auth.user, "me"], optimisticUser);
+      }
+
+      return { previousUser };
+    },
+    onSuccess: async () => {
+      // Refetch user data to get latest from server
+      const updatedUser = await queryClient.fetchQuery<User>({
+        queryKey: [QUERY_KEYS.auth.user, "me"],
+        queryFn: () => userService.getMe(),
+      });
+      
+      if (updatedUser) {
+        authService.updateUser(updatedUser);
+        queryClient.setQueryData([QUERY_KEYS.auth.user, "me"], updatedUser);
+        queryClient.setQueryData(QUERY_KEYS.auth.user, {
+          id: updatedUser.id,
+          firstName: updatedUser.firstName,
+          lastName: updatedUser.lastName,
+          email: updatedUser.email,
+        });
+      }
+      
       toast.success("Social links updated successfully");
     },
-    onError: (error) => {
+    onError: (error, _newData, context) => {
+      // Rollback on error
+      if (context?.previousUser) {
+        queryClient.setQueryData(
+          [QUERY_KEYS.auth.user, "me"],
+          context.previousUser
+        );
+      }
       const message = extractErrorMessage(error);
       toast.error(message || "Failed to update social links");
     },
@@ -147,13 +266,64 @@ export const useUpdateEducation = () => {
   return useMutation({
     mutationFn: (data: UpdateEducationsRequest) =>
       userService.updateEducation(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
+    onMutate: async (newData) => {
+      await queryClient.cancelQueries({
         queryKey: [QUERY_KEYS.auth.user, "me"],
       });
+
+      const previousUser = queryClient.getQueryData<User>([
+        QUERY_KEYS.auth.user,
+        "me",
+      ]);
+
+      // Optimistically update education
+      if (previousUser) {
+        const optimisticUser: User = {
+          ...previousUser,
+          educations: newData.educations.map((edu) => ({
+            id: edu.id || "",
+            institution: edu.institutionName,
+            degree: edu.degree || "",
+            fieldOfStudy: edu.fieldOfStudy || undefined,
+            startDate: edu.startDate || "",
+            endDate: edu.endDate || undefined,
+            isCurrent: !edu.endDate,
+            description: edu.description || undefined,
+          })),
+        };
+        queryClient.setQueryData([QUERY_KEYS.auth.user, "me"], optimisticUser);
+      }
+
+      return { previousUser };
+    },
+    onSuccess: async () => {
+      // Refetch user data to get latest from server
+      const updatedUser = await queryClient.fetchQuery<User>({
+        queryKey: [QUERY_KEYS.auth.user, "me"],
+        queryFn: () => userService.getMe(),
+      });
+      
+      if (updatedUser) {
+        authService.updateUser(updatedUser);
+        queryClient.setQueryData([QUERY_KEYS.auth.user, "me"], updatedUser);
+        queryClient.setQueryData(QUERY_KEYS.auth.user, {
+          id: updatedUser.id,
+          firstName: updatedUser.firstName,
+          lastName: updatedUser.lastName,
+          email: updatedUser.email,
+        });
+      }
+      
       toast.success("Education updated successfully");
     },
-    onError: (error) => {
+    onError: (error, _newData, context) => {
+      // Rollback on error
+      if (context?.previousUser) {
+        queryClient.setQueryData(
+          [QUERY_KEYS.auth.user, "me"],
+          context.previousUser
+        );
+      }
       const message = extractErrorMessage(error);
       toast.error(message || "Failed to update education");
     },
@@ -170,13 +340,63 @@ export const useUpdateCertificates = () => {
   return useMutation({
     mutationFn: (data: UpdateCertificatesRequest) =>
       userService.updateCertificates(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
+    onMutate: async (newData) => {
+      await queryClient.cancelQueries({
         queryKey: [QUERY_KEYS.auth.user, "me"],
       });
+
+      const previousUser = queryClient.getQueryData<User>([
+        QUERY_KEYS.auth.user,
+        "me",
+      ]);
+
+      // Optimistically update certificates
+      if (previousUser) {
+        const optimisticUser: User = {
+          ...previousUser,
+          certificates: newData.certificates.map((cert) => ({
+            id: cert.id || "",
+            name: cert.certificateName,
+            issuingOrganization: cert.issuer || "",
+            issueDate: cert.issueDate || "",
+            expiryDate: cert.expirationDate || undefined,
+            credentialId: cert.credentialId || undefined,
+            credentialUrl: cert.credentialUrl || undefined,
+          })),
+        };
+        queryClient.setQueryData([QUERY_KEYS.auth.user, "me"], optimisticUser);
+      }
+
+      return { previousUser };
+    },
+    onSuccess: async () => {
+      // Refetch user data to get latest from server
+      const updatedUser = await queryClient.fetchQuery<User>({
+        queryKey: [QUERY_KEYS.auth.user, "me"],
+        queryFn: () => userService.getMe(),
+      });
+      
+      if (updatedUser) {
+        authService.updateUser(updatedUser);
+        queryClient.setQueryData([QUERY_KEYS.auth.user, "me"], updatedUser);
+        queryClient.setQueryData(QUERY_KEYS.auth.user, {
+          id: updatedUser.id,
+          firstName: updatedUser.firstName,
+          lastName: updatedUser.lastName,
+          email: updatedUser.email,
+        });
+      }
+      
       toast.success("Certificates updated successfully");
     },
-    onError: (error) => {
+    onError: (error, _newData, context) => {
+      // Rollback on error
+      if (context?.previousUser) {
+        queryClient.setQueryData(
+          [QUERY_KEYS.auth.user, "me"],
+          context.previousUser
+        );
+      }
       const message = extractErrorMessage(error);
       toast.error(message || "Failed to update certificates");
     },
@@ -193,13 +413,55 @@ export const useUpdateUsername = () => {
   return useMutation({
     mutationFn: (data: UpdateUsernameRequest) =>
       userService.updateUsername(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
+    onMutate: async (newData) => {
+      await queryClient.cancelQueries({
         queryKey: [QUERY_KEYS.auth.user, "me"],
       });
+
+      const previousUser = queryClient.getQueryData<User>([
+        QUERY_KEYS.auth.user,
+        "me",
+      ]);
+
+      // Optimistically update username
+      if (previousUser) {
+        const optimisticUser: User = {
+          ...previousUser,
+          userName: newData.userName,
+        };
+        queryClient.setQueryData([QUERY_KEYS.auth.user, "me"], optimisticUser);
+      }
+
+      return { previousUser };
+    },
+    onSuccess: async () => {
+      // Refetch user data to get latest from server
+      const updatedUser = await queryClient.fetchQuery<User>({
+        queryKey: [QUERY_KEYS.auth.user, "me"],
+        queryFn: () => userService.getMe(),
+      });
+      
+      if (updatedUser) {
+        authService.updateUser(updatedUser);
+        queryClient.setQueryData([QUERY_KEYS.auth.user, "me"], updatedUser);
+        queryClient.setQueryData(QUERY_KEYS.auth.user, {
+          id: updatedUser.id,
+          firstName: updatedUser.firstName,
+          lastName: updatedUser.lastName,
+          email: updatedUser.email,
+        });
+      }
+      
       toast.success("Username updated successfully");
     },
-    onError: (error) => {
+    onError: (error, _newData, context) => {
+      // Rollback on error
+      if (context?.previousUser) {
+        queryClient.setQueryData(
+          [QUERY_KEYS.auth.user, "me"],
+          context.previousUser
+        );
+      }
       const message = extractErrorMessage(error);
       toast.error(message || "Failed to update username");
     },
@@ -238,13 +500,55 @@ export const useUpdateSummary = () => {
 
   return useMutation({
     mutationFn: (data: UpdateSummaryRequest) => userService.updateSummary(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
+    onMutate: async (newData) => {
+      await queryClient.cancelQueries({
         queryKey: [QUERY_KEYS.auth.user, "me"],
       });
+
+      const previousUser = queryClient.getQueryData<User>([
+        QUERY_KEYS.auth.user,
+        "me",
+      ]);
+
+      // Optimistically update summary
+      if (previousUser) {
+        const optimisticUser: User = {
+          ...previousUser,
+          summary: newData.summary,
+        };
+        queryClient.setQueryData([QUERY_KEYS.auth.user, "me"], optimisticUser);
+      }
+
+      return { previousUser };
+    },
+    onSuccess: async () => {
+      // Refetch user data to get latest from server
+      const updatedUser = await queryClient.fetchQuery<User>({
+        queryKey: [QUERY_KEYS.auth.user, "me"],
+        queryFn: () => userService.getMe(),
+      });
+      
+      if (updatedUser) {
+        authService.updateUser(updatedUser);
+        queryClient.setQueryData([QUERY_KEYS.auth.user, "me"], updatedUser);
+        queryClient.setQueryData(QUERY_KEYS.auth.user, {
+          id: updatedUser.id,
+          firstName: updatedUser.firstName,
+          lastName: updatedUser.lastName,
+          email: updatedUser.email,
+        });
+      }
+      
       toast.success("Summary updated successfully");
     },
-    onError: (error) => {
+    onError: (error, _newData, context) => {
+      // Rollback on error
+      if (context?.previousUser) {
+        queryClient.setQueryData(
+          [QUERY_KEYS.auth.user, "me"],
+          context.previousUser
+        );
+      }
       const message = extractErrorMessage(error);
       toast.error(message || "Failed to update summary");
     },
@@ -377,16 +681,60 @@ export const useUploadPhoto = () => {
 
   return useMutation({
     mutationFn: (file: File) => userService.uploadPhoto(file),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["user", "photo"],
-      });
-      queryClient.invalidateQueries({
+    onMutate: async (file) => {
+      await queryClient.cancelQueries({
         queryKey: [QUERY_KEYS.auth.user, "me"],
       });
+
+      const previousUser = queryClient.getQueryData<User>([
+        QUERY_KEYS.auth.user,
+        "me",
+      ]);
+
+      // Create preview URL for optimistic update
+      const previewUrl = URL.createObjectURL(file);
+      if (previousUser) {
+        const optimisticUser: User = {
+          ...previousUser,
+          photoUrl: previewUrl,
+        };
+        queryClient.setQueryData([QUERY_KEYS.auth.user, "me"], optimisticUser);
+      }
+
+      return { previousUser, previewUrl };
+    },
+    onSuccess: async () => {
+      // Refetch user data to get the new photo URL from server
+      const updatedUser = await queryClient.fetchQuery<User>({
+        queryKey: [QUERY_KEYS.auth.user, "me"],
+        queryFn: () => userService.getMe(),
+      });
+      
+      if (updatedUser) {
+        authService.updateUser(updatedUser);
+        queryClient.setQueryData([QUERY_KEYS.auth.user, "me"], updatedUser);
+        queryClient.setQueryData(QUERY_KEYS.auth.user, {
+          id: updatedUser.id,
+          firstName: updatedUser.firstName,
+          lastName: updatedUser.lastName,
+          email: updatedUser.email,
+        });
+      }
+      
       toast.success("Photo uploaded successfully");
     },
-    onError: (error) => {
+    onError: (error, _file, context) => {
+      // Rollback on error
+      if (context?.previousUser) {
+        queryClient.setQueryData(
+          [QUERY_KEYS.auth.user, "me"],
+          context.previousUser
+        );
+      }
+      // Clean up preview URL
+      if (context?.previewUrl) {
+        URL.revokeObjectURL(context.previewUrl);
+      }
       const message = extractErrorMessage(error);
       toast.error(message || "Failed to upload photo");
     },
@@ -402,16 +750,55 @@ export const useDeletePhoto = () => {
 
   return useMutation({
     mutationFn: () => userService.deletePhoto(),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["user", "photo"],
-      });
-      queryClient.invalidateQueries({
+    onMutate: async () => {
+      await queryClient.cancelQueries({
         queryKey: [QUERY_KEYS.auth.user, "me"],
       });
+
+      const previousUser = queryClient.getQueryData<User>([
+        QUERY_KEYS.auth.user,
+        "me",
+      ]);
+
+      // Optimistically remove photo
+      if (previousUser) {
+        const optimisticUser: User = {
+          ...previousUser,
+          photoUrl: null,
+        };
+        queryClient.setQueryData([QUERY_KEYS.auth.user, "me"], optimisticUser);
+      }
+
+      return { previousUser };
+    },
+    onSuccess: async () => {
+      // Refetch user data to get updated state from server
+      const updatedUser = await queryClient.fetchQuery<User>({
+        queryKey: [QUERY_KEYS.auth.user, "me"],
+        queryFn: () => userService.getMe(),
+      });
+      
+      if (updatedUser) {
+        authService.updateUser(updatedUser);
+        queryClient.setQueryData([QUERY_KEYS.auth.user, "me"], updatedUser);
+        queryClient.setQueryData(QUERY_KEYS.auth.user, {
+          id: updatedUser.id,
+          firstName: updatedUser.firstName,
+          lastName: updatedUser.lastName,
+          email: updatedUser.email,
+        });
+      }
+      
       toast.success("Photo deleted successfully");
     },
-    onError: (error) => {
+    onError: (error, _variables, context) => {
+      // Rollback on error
+      if (context?.previousUser) {
+        queryClient.setQueryData(
+          [QUERY_KEYS.auth.user, "me"],
+          context.previousUser
+        );
+      }
       const message = extractErrorMessage(error);
       toast.error(message || "Failed to delete photo");
     },
@@ -427,16 +814,60 @@ export const useUploadBannerPhoto = () => {
 
   return useMutation({
     mutationFn: (file: File) => userService.uploadBannerPhoto(file),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["user", "banner-photo"],
-      });
-      queryClient.invalidateQueries({
+    onMutate: async (file) => {
+      await queryClient.cancelQueries({
         queryKey: [QUERY_KEYS.auth.user, "me"],
       });
+
+      const previousUser = queryClient.getQueryData<User>([
+        QUERY_KEYS.auth.user,
+        "me",
+      ]);
+
+      // Create preview URL for optimistic update
+      const previewUrl = URL.createObjectURL(file);
+      if (previousUser) {
+        const optimisticUser: User = {
+          ...previousUser,
+          bannerPhotoUrl: previewUrl,
+        };
+        queryClient.setQueryData([QUERY_KEYS.auth.user, "me"], optimisticUser);
+      }
+
+      return { previousUser, previewUrl };
+    },
+    onSuccess: async () => {
+      // Refetch user data to get the new banner photo URL from server
+      const updatedUser = await queryClient.fetchQuery<User>({
+        queryKey: [QUERY_KEYS.auth.user, "me"],
+        queryFn: () => userService.getMe(),
+      });
+      
+      if (updatedUser) {
+        authService.updateUser(updatedUser);
+        queryClient.setQueryData([QUERY_KEYS.auth.user, "me"], updatedUser);
+        queryClient.setQueryData(QUERY_KEYS.auth.user, {
+          id: updatedUser.id,
+          firstName: updatedUser.firstName,
+          lastName: updatedUser.lastName,
+          email: updatedUser.email,
+        });
+      }
+      
       toast.success("Banner photo uploaded successfully");
     },
-    onError: (error) => {
+    onError: (error, _file, context) => {
+      // Rollback on error
+      if (context?.previousUser) {
+        queryClient.setQueryData(
+          [QUERY_KEYS.auth.user, "me"],
+          context.previousUser
+        );
+      }
+      // Clean up preview URL
+      if (context?.previewUrl) {
+        URL.revokeObjectURL(context.previewUrl);
+      }
       const message = extractErrorMessage(error);
       toast.error(message || "Failed to upload banner photo");
     },
@@ -452,16 +883,55 @@ export const useDeleteBannerPhoto = () => {
 
   return useMutation({
     mutationFn: () => userService.deleteBannerPhoto(),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["user", "banner-photo"],
-      });
-      queryClient.invalidateQueries({
+    onMutate: async () => {
+      await queryClient.cancelQueries({
         queryKey: [QUERY_KEYS.auth.user, "me"],
       });
+
+      const previousUser = queryClient.getQueryData<User>([
+        QUERY_KEYS.auth.user,
+        "me",
+      ]);
+
+      // Optimistically remove banner photo
+      if (previousUser) {
+        const optimisticUser: User = {
+          ...previousUser,
+          bannerPhotoUrl: null,
+        };
+        queryClient.setQueryData([QUERY_KEYS.auth.user, "me"], optimisticUser);
+      }
+
+      return { previousUser };
+    },
+    onSuccess: async () => {
+      // Refetch user data to get updated state from server
+      const updatedUser = await queryClient.fetchQuery<User>({
+        queryKey: [QUERY_KEYS.auth.user, "me"],
+        queryFn: () => userService.getMe(),
+      });
+      
+      if (updatedUser) {
+        authService.updateUser(updatedUser);
+        queryClient.setQueryData([QUERY_KEYS.auth.user, "me"], updatedUser);
+        queryClient.setQueryData(QUERY_KEYS.auth.user, {
+          id: updatedUser.id,
+          firstName: updatedUser.firstName,
+          lastName: updatedUser.lastName,
+          email: updatedUser.email,
+        });
+      }
+      
       toast.success("Banner photo deleted successfully");
     },
-    onError: (error) => {
+    onError: (error, _variables, context) => {
+      // Rollback on error
+      if (context?.previousUser) {
+        queryClient.setQueryData(
+          [QUERY_KEYS.auth.user, "me"],
+          context.previousUser
+        );
+      }
       const message = extractErrorMessage(error);
       toast.error(message || "Failed to delete banner photo");
     },

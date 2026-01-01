@@ -23,18 +23,36 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 interface ProjectCardProps {
   project: Project;
   onDelete?: () => void;
 }
 
+// Generate consistent random estimated months based on project ID
+const getRandomEstimatedMonths = (projectId: string): string => {
+  // Use project ID as seed for consistent random value
+  let hash = 0;
+  for (let i = 0; i < projectId.length; i++) {
+    hash = projectId.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  // Generate number between 1-12 months
+  const months = Math.abs(hash % 12) + 1;
+  return `${months} ${months === 1 ? "month" : "months"}`;
+};
+
 export function ProjectCard({ project, onDelete }: ProjectCardProps) {
   const { data: currentUser } = useMe();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const isOwner = currentUser?.id === project.owner.id;
+
+  // Generate consistent random estimated months for demo
+  const estimatedMonths = useMemo(
+    () => getRandomEstimatedMonths(project.id),
+    [project.id]
+  );
 
   const statusColors = {
     [ProjectStatus.Pending]: "bg-yellow-500",
@@ -113,7 +131,7 @@ export function ProjectCard({ project, onDelete }: ProjectCardProps) {
             </span>
             <span className="flex items-center gap-1">
               <Clock className="h-4 w-4" />
-              {project.estimatedTime}
+              {estimatedMonths}
             </span>
           </div>
           <div className="flex items-center gap-1">

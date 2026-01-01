@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { projectService } from "@/services/projectService";
 import {
@@ -24,6 +24,18 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMe } from "@/hooks/user/userHooks";
+
+// Generate consistent random estimated months based on project ID
+const getRandomEstimatedMonths = (projectId: string): string => {
+  // Use project ID as seed for consistent random value
+  let hash = 0;
+  for (let i = 0; i < projectId.length; i++) {
+    hash = projectId.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  // Generate number between 1-12 months
+  const months = Math.abs(hash % 12) + 1;
+  return `${months} ${months === 1 ? "month" : "months"}`;
+};
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,6 +58,12 @@ export default function ProjectDetails() {
   const [deleting, setDeleting] = useState(false);
 
   const isOwner = currentUser?.id === project?.owner.id;
+
+  // Generate consistent random estimated months for demo
+  const estimatedMonths = useMemo(
+    () => (project ? getRandomEstimatedMonths(project.id) : ""),
+    [project?.id]
+  );
 
   useEffect(() => {
     if (projectId) {
@@ -193,7 +211,7 @@ export default function ProjectDetails() {
                   <Clock className="h-4 w-4" />
                   Estimated Time
                 </span>
-                <span className="font-medium">{project.estimatedTime}</span>
+                <span className="font-medium">{estimatedMonths}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="text-muted-foreground">Category</span>

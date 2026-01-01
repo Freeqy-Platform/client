@@ -44,21 +44,27 @@ export const userService = {
    * Update current user profile
    */
   updateProfile: async (data: UpdateUserProfileRequest): Promise<User> => {
-    // Transform to match API format (PascalCase for FirstName/LastName)
     const requestData: {
-      track?: string;
-      FirstName?: string;
-      LastName?: string;
-    } = {};
+      firstName: string;
+      lastName: string;
+      phoneNumber?: string;
+      availability?: string;
+      trackName?: string;
+    } = {
+      firstName: data.firstName,
+      lastName: data.lastName,
+    };
 
-    if (data.track) requestData.track = data.track;
-    if (data.FirstName) requestData.FirstName = data.FirstName;
-    if (data.LastName) requestData.LastName = data.LastName;
-    // Fallback to camelCase if PascalCase not provided
-    if (!requestData.FirstName && data.firstName)
-      requestData.FirstName = data.firstName;
-    if (!requestData.LastName && data.lastName)
-      requestData.LastName = data.lastName;
+    // Only include optional fields if they have a value (not empty string)
+    if (data.phoneNumber && data.phoneNumber.trim()) {
+      requestData.phoneNumber = data.phoneNumber.trim();
+    }
+    if (data.availability && data.availability.trim()) {
+      requestData.availability = data.availability.trim();
+    }
+    if (data.trackName && data.trackName.trim()) {
+      requestData.trackName = data.trackName.trim();
+    }
 
     return apiClient.put<User>("/Users/me", requestData);
   },

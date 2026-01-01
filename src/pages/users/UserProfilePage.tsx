@@ -47,12 +47,12 @@ const UserProfilePage: React.FC = () => {
   return (
     <div className="min-h-[calc(100vh-4rem-4.5rem)] bg-muted/30">
       {/* Banner Photo Section */}
-      <div className="w-full flex justify-center bg-muted/30 pb-4">
-        <div className="w-full max-w-5xl px-4 sm:px-6 lg:px-8">
+      <div className="w-full bg-muted/30 pb-4">
+        <div className="w-full">
           <ReadOnlyBannerPhoto user={user} />
-          <div className="relative -mt-16 pb-6">
-            <ReadOnlyProfilePhoto user={user} />
-          </div>
+        </div>
+        <div className="relative -mt-16 pb-6 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <ReadOnlyProfilePhoto user={user} />
         </div>
       </div>
 

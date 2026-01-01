@@ -47,15 +47,20 @@ const ProfilePage: React.FC = () => {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
 
-  // Photo handling
+  // Photo handling with optimistic updates
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setPhotoPreview(URL.createObjectURL(file));
+      const previewUrl = URL.createObjectURL(file);
+      setPhotoPreview(previewUrl);
       try {
         await uploadPhoto.mutateAsync(file);
+        // Clear preview after successful upload (hook handles cache update)
+        setPhotoPreview(null);
       } catch (error) {
         console.error("Error uploading photo:", error);
+        // Preview will be cleared on error by hook rollback
+        setPhotoPreview(null);
       }
     }
   };
@@ -69,11 +74,14 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  // Banner photo handling
+  // Banner photo handling with optimistic updates
   const handleBannerUpload = async (file: File) => {
+    const previewUrl = URL.createObjectURL(file);
+    setBannerPreview(previewUrl);
     try {
-      setBannerPreview(URL.createObjectURL(file));
       await uploadBannerPhoto.mutateAsync(file);
+      // Clear preview after successful upload (hook handles cache update)
+      setBannerPreview(null);
     } catch (error) {
       console.error("Error uploading banner photo:", error);
       setBannerPreview(null);
@@ -145,8 +153,8 @@ const ProfilePage: React.FC = () => {
   return (
     <div className="min-h-[calc(100vh-4rem-4.5rem)] bg-muted/30">
       {/* Banner Photo Section */}
-      <div className="w-full flex justify-center bg-muted/30 pb-4">
-        <div className="w-full max-w-5xl px-4 sm:px-6 lg:px-8">
+      <div className="w-full bg-muted/30 pb-4">
+        <div className="w-full">
           <BannerPhoto
             user={user}
             bannerPreview={bannerPreview}
@@ -155,14 +163,14 @@ const ProfilePage: React.FC = () => {
             isUploading={uploadBannerPhoto.isPending}
             isDeleting={deleteBannerPhoto.isPending}
           />
-          <div className="relative -mt-16 pb-6">
-            <ProfilePhoto
-              user={user}
-              photoPreview={photoPreview}
-              onPhotoUpload={handlePhotoUpload}
-              onPhotoDelete={handleDeletePhoto}
-            />
-          </div>
+        </div>
+        <div className="relative -mt-16 pb-6 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <ProfilePhoto
+            user={user}
+            photoPreview={photoPreview}
+            onPhotoUpload={handlePhotoUpload}
+            onPhotoDelete={handleDeletePhoto}
+          />
         </div>
       </div>
 

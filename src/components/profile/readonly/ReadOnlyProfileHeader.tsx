@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader } from "../../ui/card";
 import { Badge } from "../../ui/badge";
 import { Mail, Phone, Calendar, MapPin, CheckCircle2 } from "lucide-react";
 import type { User } from "../../../types/user";
+import { getAvailabilityColor } from "../../../lib/utils/availabilityUtils";
 
 interface ReadOnlyProfileHeaderProps {
   user: User;
@@ -51,8 +52,11 @@ export const ReadOnlyProfileHeader: React.FC<ReadOnlyProfileHeaderProps> = ({
           {user.availability && (
             <div className="flex items-center gap-1.5">
               <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              <Badge variant="outline" className="text-xs font-normal">
-                {user.availability}
+              <Badge
+                variant="outline"
+                className={`text-xs font-normal ${getAvailabilityColor(user.availability)}`}
+              >
+                {user.availability === "NotAvailable" ? "Not Available" : user.availability}
               </Badge>
             </div>
           )}

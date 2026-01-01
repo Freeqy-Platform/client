@@ -54,7 +54,8 @@ import {
 } from "@/types/projects";
 import type { Category, Technology, Project } from "@/types/projects";
 import { toast } from "sonner";
-import { Loader2, ChevronDown } from "lucide-react";
+import { Loader2, ChevronDown, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface CreateProjectDialogProps {
     open: boolean;
@@ -69,6 +70,7 @@ export function CreateProjectDialog({
     onSuccess,
     projectToEdit
 }: CreateProjectDialogProps) {
+    const navigate = useNavigate();
     const [categories, setCategories] = useState<Category[]>([]);
     const [technologies, setTechnologies] = useState<Technology[]>([]);
     const [loading, setLoading] = useState(false);
@@ -239,7 +241,24 @@ export function CreateProjectDialog({
                                 name="description"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Description</FormLabel>
+                                        <div className="flex items-center justify-between">
+                                            <FormLabel>Description</FormLabel>
+                                            {!projectToEdit && (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="gap-1.5 text-xs h-7"
+                                                    onClick={() => {
+                                                        onOpenChange(false);
+                                                        navigate("/projects/analyze");
+                                                    }}
+                                                >
+                                                    <Sparkles className="h-3 w-3" />
+                                                    Get AI Suggestions
+                                                </Button>
+                                            )}
+                                        </div>
                                         <FormControl>
                                             <Textarea
                                                 placeholder="Describe the project goals and scope..."

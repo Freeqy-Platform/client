@@ -58,14 +58,11 @@ export interface Certificate {
 
 // Request DTOs
 export interface UpdateUserProfileRequest {
-  track?: string;
-  FirstName?: string;
-  LastName?: string;
-  firstName?: string; // Keep for backwards compatibility
-  lastName?: string; // Keep for backwards compatibility
+  firstName: string;
+  lastName: string;
   phoneNumber?: string;
-  summary?: string;
   availability?: string;
+  trackName?: string;
 }
 
 export interface UpdateUserSkillsRequest {
@@ -153,7 +150,8 @@ export interface ConfirmEmailRequest {
 }
 
 export interface ResendConfirmEmailRequest {
-  userId: string;
+  userId?: string;
+  email: string;
 }
 
 // Track Types

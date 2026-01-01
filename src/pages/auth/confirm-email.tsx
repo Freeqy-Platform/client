@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import {
   Card,
@@ -8,17 +8,34 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { CheckCircle2, XCircle, Mail, Loader2 } from "lucide-react";
 import { useConfirmEmail, useResendConfirmEmail } from "@/hooks/user/userHooks";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+const resendEmailSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+});
 
 const ConfirmEmailPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const confirmEmail = useConfirmEmail();
   const resendEmail = useResendConfirmEmail();
+  const [showEmailInput, setShowEmailInput] = useState(false);
 
   const userId = searchParams.get("userId");
   const token = searchParams.get("token");
+
+  const resendForm = useForm<{ email: string }>({
+    resolver: zodResolver(resendEmailSchema),
+    defaultValues: {
+      email: "",
+    },
+  });
 
   useEffect(() => {
     // Only attempt confirmation if we have both userId and token
@@ -113,33 +130,78 @@ const ConfirmEmailPage: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {userId && (
+              {!showEmailInput ? (
                 <Button
-                  onClick={() => {
+                  onClick={() => setShowEmailInput(true)}
+                  className="w-full bg-[var(--purple)] text-[var(--purple-foreground)] hover:bg-[var(--purple)]/90"
+                >
+                  <Mail className="mr-2 h-4 w-4" />
+                  Resend Confirmation Email
+                </Button>
+              ) : (
+                <form
+                  onSubmit={resendForm.handleSubmit((data) => {
                     resendEmail.mutate(
-                      { userId },
+                      {
+                        email: data.email,
+                        ...(userId && { userId }),
+                      },
                       {
                         onSuccess: () => {
-                          // Optionally show a success message
+                          setShowEmailInput(false);
+                          resendForm.reset();
                         },
                       }
                     );
-                  }}
-                  disabled={resendEmail.isPending}
-                  className="w-full bg-[var(--purple)] text-[var(--purple-foreground)] hover:bg-[var(--purple)]/90"
+                  })}
+                  className="space-y-4"
                 >
-                  {resendEmail.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <Mail className="mr-2 h-4 w-4" />
-                      Resend Confirmation Email
-                    </>
-                  )}
-                </Button>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="Enter your email address"
+                      {...resendForm.register("email")}
+                      disabled={resendEmail.isPending}
+                    />
+                    {resendForm.formState.errors.email && (
+                      <p className="text-sm text-red-600 dark:text-red-400">
+                        {resendForm.formState.errors.email.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="submit"
+                      disabled={resendEmail.isPending}
+                      className="flex-1 bg-[var(--purple)] text-[var(--purple-foreground)] hover:bg-[var(--purple)]/90"
+                    >
+                      {resendEmail.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Mail className="mr-2 h-4 w-4" />
+                          Send
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setShowEmailInput(false);
+                        resendForm.reset();
+                      }}
+                      disabled={resendEmail.isPending}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
               )}
               <Button
                 variant="outline"

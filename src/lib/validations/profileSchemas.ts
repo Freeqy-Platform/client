@@ -1,11 +1,11 @@
 import { z } from "zod";
 
 export const profileSchema = z.object({
-  FirstName: z.string().min(2, "First name must be at least 2 characters"),
-  LastName: z.string().min(2, "Last name must be at least 2 characters"),
-  firstName: z.string().min(2, "First name must be at least 2 characters").optional(),
-  lastName: z.string().min(2, "Last name must be at least 2 characters").optional(),
-  track: z.string().optional(),
+  firstName: z.string().min(2, "First name must be at least 2 characters"),
+  lastName: z.string().min(2, "Last name must be at least 2 characters"),
+  phoneNumber: z.string().optional(),
+  availability: z.string().optional(),
+  trackName: z.string().optional(),
 });
 
 export const summarySchema = z.object({

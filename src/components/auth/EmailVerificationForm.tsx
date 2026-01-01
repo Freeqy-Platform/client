@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useSearchParams } from "react-router-dom";
 import { z } from "zod";
@@ -13,18 +13,25 @@ import {
   FormMessage,
 } from "../ui/form";
 import { Input } from "../ui/input";
+import { Label } from "../ui/label";
 import { useAuth } from "../../hooks/auth/useAuth";
-import { Mail, ArrowLeft } from "lucide-react";
+import { Mail, ArrowLeft, Loader2 } from "lucide-react";
 import { setFormErrors } from "../../lib/form-error-handler";
 
 const emailVerificationSchema = z.object({
   code: z.string().min(6, "Verification code must be at least 6 characters"),
 });
 
+const resendEmailSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+});
+
 type EmailVerificationFormData = z.infer<typeof emailVerificationSchema>;
+type ResendEmailFormData = z.infer<typeof resendEmailSchema>;
 
 export const EmailVerificationForm = () => {
   const [searchParams] = useSearchParams();
+  const [showEmailInput, setShowEmailInput] = useState(false);
   const {
     confirmEmail,
     resendConfirmationCode,
@@ -40,6 +47,13 @@ export const EmailVerificationForm = () => {
     resolver: zodResolver(emailVerificationSchema),
     defaultValues: {
       code: code || "",
+    },
+  });
+
+  const resendForm = useForm<ResendEmailFormData>({
+    resolver: zodResolver(resendEmailSchema),
+    defaultValues: {
+      email: email || "",
     },
   });
 
@@ -76,14 +90,26 @@ export const EmailVerificationForm = () => {
   }, [userId, code]);
 
   const handleResendCode = () => {
-    if (!email) {
-      form.setError("root", {
-        message: "Email address is required to resend code",
-      });
+    // If email is in URL params, use it directly
+    if (email) {
+      resendConfirmationCode({ email });
       return;
     }
 
-    resendConfirmationCode({ email });
+    // Otherwise, show email input form
+    setShowEmailInput(true);
+  };
+
+  const handleResendSubmit = (data: ResendEmailFormData) => {
+    resendConfirmationCode(
+      { email: data.email },
+      {
+        onSuccess: () => {
+          setShowEmailInput(false);
+          resendForm.reset({ email: data.email });
+        },
+      }
+    );
   };
 
   if (!userId) {
@@ -186,19 +212,72 @@ export const EmailVerificationForm = () => {
       </Form>
 
       {/* Resend Code */}
-      <div className="text-center space-y-2">
-        <p className="text-sm text-muted-foreground">
-          Didn't receive the code?{" "}
-          <Button
-            type="button"
-            variant="link"
-            className="p-0 h-auto text-[var(--purple)] font-semibold"
-            onClick={handleResendCode}
-            disabled={isResendConfirmationLoading}
+      <div className="text-center space-y-4">
+        {!showEmailInput ? (
+          <p className="text-sm text-muted-foreground">
+            Didn't receive the code?{" "}
+            <Button
+              type="button"
+              variant="link"
+              className="p-0 h-auto text-[var(--purple)] font-semibold"
+              onClick={handleResendCode}
+              disabled={isResendConfirmationLoading}
+            >
+              {isResendConfirmationLoading ? "Sending..." : "Resend Code"}
+            </Button>
+          </p>
+        ) : (
+          <form
+            onSubmit={resendForm.handleSubmit(handleResendSubmit)}
+            className="space-y-4"
           >
-            {isResendConfirmationLoading ? "Sending..." : "Resend Code"}
-          </Button>
-        </p>
+            <div className="space-y-2">
+              <Label htmlFor="resend-email">Email Address</Label>
+              <Input
+                id="resend-email"
+                type="email"
+                placeholder="Enter your email address"
+                {...resendForm.register("email")}
+                disabled={isResendConfirmationLoading}
+              />
+              {resendForm.formState.errors.email && (
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  {resendForm.formState.errors.email.message}
+                </p>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                type="submit"
+                disabled={isResendConfirmationLoading}
+                className="flex-1 bg-[var(--purple)] text-[var(--purple-foreground)] hover:bg-[var(--purple)]/90"
+              >
+                {isResendConfirmationLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="mr-2 h-4 w-4" />
+                    Send Code
+                  </>
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowEmailInput(false);
+                  resendForm.reset({ email: email || "" });
+                }}
+                disabled={isResendConfirmationLoading}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        )}
         <Link
           to="/login"
           className="inline-flex items-center gap-2 text-sm text-[var(--purple)] hover:underline"

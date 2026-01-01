@@ -43,6 +43,7 @@ export const BannerPhoto: React.FC<BannerPhotoProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(bannerPreview || null);
 
+  // Use preview if available, otherwise use user's banner photo (which updates reactively from React Query)
   const bannerUrl = bannerPreview || user.bannerPhotoUrl || null;
   const hasBanner = !!bannerUrl;
 
@@ -52,6 +53,9 @@ export const BannerPhoto: React.FC<BannerPhotoProps> = ({
       setPreview(bannerPreview);
     } else if (!user.bannerPhotoUrl) {
       setPreview(null);
+    } else {
+      // Use user's banner photo from React Query cache
+      setPreview(user.bannerPhotoUrl);
     }
   }, [bannerPreview, user.bannerPhotoUrl]);
 
@@ -78,22 +82,18 @@ export const BannerPhoto: React.FC<BannerPhotoProps> = ({
 
   return (
     <>
-      <div className="relative h-64 sm:h-72 w-full rounded-lg overflow-hidden group shadow-sm">
+      <div className="relative w-full h-64 sm:h-72 overflow-hidden group">
         {/* Banner Image */}
         {bannerUrl ? (
           <img
             src={bannerUrl}
             alt="Banner"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-center"
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-[var(--purple)] via-purple-600 to-purple-800" />
         )}
 
-        {/* Gradient Overlay */}
-        {/* <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" /> */}
-
-        {/* Edit Button */}
         <Button
           variant="secondary"
           size="icon"

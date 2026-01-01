@@ -8,6 +8,7 @@ import Contact from "@/pages/Contact";
 import About from "@/pages/About";
 import Blog from "@/pages/Blog";
 import Help from "@/pages/Help";
+import HowItWorks from "@/pages/HowItWorks";
 import Dashboard from "@/pages/dashboard/Dashboard";
 import ProjectsPage from "@/pages/dashboard/ProjectsPage";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
@@ -24,6 +25,8 @@ import UserProfilePage from "@/pages/users/UserProfilePage";
 import ProjectsList from "@/pages/projects/ProjectsList";
 import ProjectDetails from "@/pages/projects/ProjectDetails";
 import MyProjectsPage from "@/pages/projects/MyProjectsPage";
+import AIAnalysisPage from "@/pages/projects/AIAnalysisPage";
+import UsersListPage from "@/pages/users/UsersListPage";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import Messages from "@/pages/messages/Messages";
 import Invitations from "@/pages/projects/invitations/Invitations";
@@ -37,6 +40,7 @@ const MainRouter = () => {
         <Route path="/about" element={<About />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/how-it-works" element={<HowItWorks />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/help" element={<Help />} />
@@ -53,10 +57,12 @@ const MainRouter = () => {
         <Route path="/dashboard/projects" element={<ProjectsPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/profile/settings" element={<SettingsPage />} />
+        <Route path="/users" element={<UsersListPage />} />
         <Route path="/users/:id" element={<UserProfilePage />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/projects" element={<ProjectsList />} />
         <Route path="/projects/my" element={<MyProjectsPage />} />
+        <Route path="/projects/analyze" element={<AIAnalysisPage />} />
         <Route path="/projects/:projectId" element={<ProjectDetails />} />
         <Route path="/confirm-email" element={<ConfirmEmailPage />} />
         <Route path="/projects/invitations" element={<Invitations />} />
