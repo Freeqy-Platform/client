@@ -239,47 +239,92 @@ export const extractErrorMessage = (error: unknown): string => {
             if (Array.isArray(validationError.errors)) {
                 // Find the first descriptive error message (not an error code)
                 const descriptiveError = validationError.errors.find(
-                    (err) => typeof err === "string" && !isErrorCode(err)
+                    (err) => typeof err === "string" && err.length > 1 && !isErrorCode(err)
                 );
                 if (descriptiveError) {
                     return descriptiveError;
                 }
-                // If no descriptive error found, return the first one
-                if (validationError.errors.length > 0) {
-                    return validationError.errors[0];
+                // If no descriptive error found, try to get a meaningful message
+                // Skip single character entries and error codes
+                const meaningfulError = validationError.errors.find(
+                    (err) => typeof err === "string" && err.length > 1
+                );
+                if (meaningfulError) {
+                    // If it's an error code, get default message
+                    if (isErrorCode(meaningfulError)) {
+                        return getDefaultErrorMessage(meaningfulError);
+                    }
+                    return meaningfulError;
+                }
+                // Last resort: return title or default
+                if (validationError.title && validationError.title.length > 1) {
+                    return validationError.title;
                 }
             }
             // Handle object format errors
             else if (typeof validationError.errors === "object") {
-                const firstErrorKey = Object.keys(validationError.errors)[0];
-                const firstErrorMessages = validationError.errors[firstErrorKey];
-                if (firstErrorMessages && firstErrorMessages.length > 0) {
-                    // Prefer descriptive messages over codes
-                    const descriptiveMsg = firstErrorMessages.find(
-                        (msg) => !isErrorCode(msg)
-                    );
-                    return descriptiveMsg || firstErrorMessages[0];
+                // Iterate through all error keys to find a meaningful message
+                for (const errorKey of Object.keys(validationError.errors)) {
+                    const errorMessages = validationError.errors[errorKey];
+                    if (Array.isArray(errorMessages) && errorMessages.length > 0) {
+                        // Prefer descriptive messages over codes, and skip single characters
+                        const descriptiveMsg = errorMessages.find(
+                            (msg) => typeof msg === "string" && msg.length > 1 && !isErrorCode(msg)
+                        );
+                        if (descriptiveMsg) {
+                            return descriptiveMsg;
+                        }
+                        // If no descriptive message, get first meaningful one
+                        const meaningfulMsg = errorMessages.find(
+                            (msg) => typeof msg === "string" && msg.length > 1
+                        );
+                        if (meaningfulMsg) {
+                            // If it's an error code, get default message
+                            if (isErrorCode(meaningfulMsg)) {
+                                return getDefaultErrorMessage(meaningfulMsg);
+                            }
+                            return meaningfulMsg;
+                        }
+                    }
+                }
+                // If no meaningful message found in errors, try title
+                if (validationError.title && validationError.title.length > 1) {
+                    return validationError.title;
                 }
             }
         }
-        return validationError?.title || "Validation error occurred";
+        // Fallback to title if available and meaningful
+        if (validationError?.title && validationError.title.length > 1) {
+            return validationError.title;
+        }
+        return "Validation error occurred";
     }
 
     if (axios.isAxiosError(error)) {
         if (error.response?.data) {
             const data = error.response.data;
             if (typeof data === "object" && "message" in data) {
-                return (data as { message: string }).message;
+                const message = (data as { message: string }).message;
+                // Ensure message is meaningful (not a single character)
+                if (typeof message === "string" && message.length > 1) {
+                    return message;
+                }
             }
-            if (typeof data === "string") {
+            if (typeof data === "string" && data.length > 1) {
                 return data;
             }
         }
-        return error.message || "An error occurred";
+        // Use error message if it's meaningful
+        if (error.message && error.message.length > 1) {
+            return error.message;
+        }
+        return "An error occurred";
     }
 
     if (error instanceof Error) {
-        return error.message;
+        if (error.message && error.message.length > 1) {
+            return error.message;
+        }
     }
 
     return "An unexpected error occurred";

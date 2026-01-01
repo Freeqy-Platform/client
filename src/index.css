@@ -153,3 +153,21 @@
   pointer-events: auto !important;
 }
 
+/* Mobile sidebar: Always show text when sidebar is open */
+[data-mobile="true"] [data-sidebar="group-label"] {
+  opacity: 1 !important;
+  margin-top: 0 !important;
+}
+
+[data-mobile="true"] [data-sidebar="menu-button"] {
+  width: auto !important;
+  height: auto !important;
+  padding: 0.5rem !important;
+}
+
+[data-mobile="true"] [data-sidebar="menu-button"] span {
+  opacity: 1 !important;
+  width: auto !important;
+  overflow: visible !important;
+  display: inline !important;
+}

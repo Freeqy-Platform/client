@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera, Trash2 } from "lucide-react";
-import type { User } from "../../types/user";
-import { getUserInitials, getUserPhotoUrl } from "../../lib/utils/profileUtils";
+import type { User } from "@/types/user";
+import { getUserInitials, getUserPhotoUrl } from "@/lib/utils/profileUtils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,7 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "../ui/alert-dialog";
+} from "@/components/ui/alert-dialog";
 
 interface ProfilePhotoProps {
   user: User;
@@ -70,10 +70,10 @@ export const ProfilePhoto: React.FC<ProfilePhotoProps> = ({
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <button
-              className="absolute -top-2 -right-2 h-8 w-8 rounded-full bg-background border-2 border-border shadow-lg hover:bg-destructive hover:border-destructive transition-all duration-200 flex items-center justify-center group/delete"
+              className="absolute cursor-pointer -top-2 left-30 h-8 w-8 rounded-full bg-background border-2 border-border shadow-lg hover:bg-destructive hover:border-destructive transition-all duration-200 flex items-center justify-center group/delete"
               aria-label="Delete profile photo"
             >
-              <Trash2 className="h-4 w-4 text-muted-foreground group-hover/delete:text-destructive-foreground transition-colors" />
+              <Trash2 className="h-4 w-4 group-hover/delete:text-destructive-foreground transition-colors" />
             </button>
           </AlertDialogTrigger>
           <AlertDialogContent>

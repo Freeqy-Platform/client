@@ -4,6 +4,8 @@ import { Skeleton } from "../../components/ui/skeleton";
 import { useMe } from "../../hooks/user/userHooks";
 import { TrackRequestForm } from "../../components/profile/TrackRequestForm";
 import { TrackRequestsSection } from "../../components/profile/TrackRequestsSection";
+import { UpdateEmailForm } from "../../components/profile/UpdateEmailForm";
+import { ChangePasswordForm } from "../../components/profile/ChangePasswordForm";
 
 const SettingsPage: React.FC = () => {
   const { data: user, isLoading, error } = useMe();
@@ -42,11 +44,13 @@ const SettingsPage: React.FC = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold">Settings</h1>
           <p className="text-muted-foreground">
-            Manage your track requests and preferences
+            Manage your account settings, track requests, and preferences
           </p>
         </div>
 
         <div className="space-y-6">
+          <UpdateEmailForm currentEmail={user.email} />
+          <ChangePasswordForm />
           <TrackRequestForm />
           <TrackRequestsSection />
         </div>

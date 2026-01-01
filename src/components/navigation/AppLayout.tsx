@@ -9,7 +9,7 @@ const AppLayout = () => {
   const sidebarConfig = useSidebarConfig();
 
   return (
-    <SidebarProvider defaultOpen={false}>
+    <SidebarProvider defaultOpen={true}>
       <AppHeader />
       <div className="flex flex-col min-h-screen w-full overflow-x-hidden pt-16">
         <div className="flex flex-1 w-full min-w-0">

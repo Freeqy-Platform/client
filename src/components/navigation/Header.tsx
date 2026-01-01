@@ -19,7 +19,6 @@ const Header = () => {
   const { data: user } = useMe();
 
   const navLinks = [
-    { label: "How it Works", path: "#how-it-works" },
     { label: "Projects", path: "/projects" },
     { label: "Find Teams", path: "/teams" },
     { label: "About", path: "/about" },

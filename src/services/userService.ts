@@ -15,6 +15,7 @@ import type {
   UsersListQueryParams,
   UsersListResponse,
   ConfirmEmailRequest,
+  ResendConfirmEmailRequest,
   Track,
   TrackRequest,
   TrackRequestStats,
@@ -67,7 +68,7 @@ export const userService = {
    * Get user by id
    */
   getUserById: async (id: string): Promise<User> => {
-    return apiClient.get<User>(`/api/Users/${id}`);
+    return apiClient.get<User>(`/Users/${id}`);
   },
 
   /**
@@ -189,6 +190,14 @@ export const userService = {
     await apiClient.post(`/Users/confirm-email?${queryParams.toString()}`);
   },
 
+  /**
+   * POST /api/Users/resend-confirm-email
+   * Resend confirmation email
+   */
+  resendConfirmEmail: async (data: ResendConfirmEmailRequest): Promise<void> => {
+    await apiClient.post("/Users/resend-confirm-email", data);
+  },
+
   // Track Management
   /**
    * PUT /api/Users/me/track
@@ -232,9 +241,7 @@ export const userService = {
    * Get track request stats for current user
    */
   getTrackRequestStats: async (): Promise<TrackRequestStats> => {
-    return apiClient.get<TrackRequestStats>(
-      "/Users/me/track-requests/stats"
-    );
+    return apiClient.get<TrackRequestStats>("/Users/me/track-requests/stats");
   },
 
   /**
@@ -242,12 +249,19 @@ export const userService = {
    * Get all track requests submitted by current user
    */
   getMyTrackRequests: async (): Promise<TrackRequest[]> => {
-    const response = await apiClient.get<TrackRequest[] | { data?: TrackRequest[] }>("/Users/me/track-requests");
+    const response = await apiClient.get<
+      TrackRequest[] | { data?: TrackRequest[] }
+    >("/Users/me/track-requests");
     // Handle case where API might return wrapped response
     if (Array.isArray(response)) {
       return response;
     }
-    if (response && typeof response === 'object' && 'data' in response && Array.isArray(response.data)) {
+    if (
+      response &&
+      typeof response === "object" &&
+      "data" in response &&
+      Array.isArray(response.data)
+    ) {
       return response.data;
     }
     return [];
@@ -259,12 +273,19 @@ export const userService = {
    * Get all track requests (admin only)
    */
   getAllTrackRequests: async (): Promise<TrackRequest[]> => {
-    const response = await apiClient.get<TrackRequest[] | { data?: TrackRequest[] }>("/Users/track-requests");
+    const response = await apiClient.get<
+      TrackRequest[] | { data?: TrackRequest[] }
+    >("/Users/track-requests");
     // Handle case where API might return wrapped response
     if (Array.isArray(response)) {
       return response;
     }
-    if (response && typeof response === 'object' && 'data' in response && Array.isArray(response.data)) {
+    if (
+      response &&
+      typeof response === "object" &&
+      "data" in response &&
+      Array.isArray(response.data)
+    ) {
       return response.data;
     }
     return [];
@@ -274,9 +295,7 @@ export const userService = {
    * POST /api/Users/track-requests/approve
    * Approve a track request (admin only)
    */
-  approveTrackRequest: async (
-    data: ApproveTrackRequestDto
-  ): Promise<void> => {
+  approveTrackRequest: async (data: ApproveTrackRequestDto): Promise<void> => {
     await apiClient.post("/Users/track-requests/approve", data);
   },
 

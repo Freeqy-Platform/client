@@ -52,14 +52,14 @@ export const useLogin = () => {
         queryClient.setQueryData([QUERY_KEYS.auth.user, "me"], fullUser);
 
         toast.success("Login successful!");
-        navigate("/dashboard");
+        navigate("/projects");
       } catch (error) {
         // If /me fails, still proceed with basic user data
         console.error("Failed to fetch user profile:", error);
         queryClient.setQueryData(QUERY_KEYS.auth.user, basicUser);
         queryClient.setQueryData([QUERY_KEYS.auth.user, "me"], basicUser);
         toast.success("Login successful!");
-        navigate("/dashboard");
+        navigate("/projects");
       }
     },
     onError: (error) => {

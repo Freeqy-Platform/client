@@ -45,7 +45,7 @@ const AppSidebar = ({ config }: AppSidebarProps) => {
     <Sidebar collapsible="icon" className="top-16">
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="hidden md:opacity-100 md:block lg:block">
+          <SidebarGroupLabel>
             {config.navigationLabel || "Navigation"}
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -65,9 +65,7 @@ const AppSidebar = ({ config }: AppSidebarProps) => {
                     >
                       <Link to={link.path}>
                         <Icon className="h-4 w-4 shrink-0" />
-                        <span className="hidden md:opacity-100 md:inline lg:inline">
-                          {link.label}
-                        </span>
+                        <span>{link.label}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -79,7 +77,7 @@ const AppSidebar = ({ config }: AppSidebarProps) => {
 
         {config.actionLinks && config.actionLinks.length > 0 && (
           <SidebarGroup>
-            <SidebarGroupLabel className="hidden md:opacity-100 md:block lg:block">
+            <SidebarGroupLabel>
               {config.actionLabel || "Actions"}
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -99,9 +97,7 @@ const AppSidebar = ({ config }: AppSidebarProps) => {
                       >
                         <Link to={link.path}>
                           <Icon className="h-4 w-4 shrink-0" />
-                          <span className="hidden md:opacity-100 md:inline lg:inline">
-                            {link.label}
-                          </span>
+                          <span>{link.label}</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>

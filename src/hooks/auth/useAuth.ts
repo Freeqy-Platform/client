@@ -33,11 +33,6 @@ export const useAuth = () => {
   ) => {
     loginMutation.mutate(data, {
       onSuccess: async (response) => {
-        // Tokens are stored in useLogin mutation's onSuccess
-        // /me is called there to get full user profile
-        // The context will be updated via the query cache
-        // We call login here to ensure context is updated, but it will use
-        // the full user data from cache if available (from /me call)
         authContext.login(
           {
             id: response.id,

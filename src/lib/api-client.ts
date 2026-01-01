@@ -143,38 +143,9 @@ class ApiClient {
   }
 
   private handleError(error: AxiosError) {
-    const { response } = error;
-
     // Don't show toast for 401 errors - they're handled by refresh logic
-    if (response?.status === 401) {
-      return Promise.reject(error);
-    }
-
-    // Handle validation errors
-    if (isValidationError(error)) {
-      const validationError = error.response?.data;
-      if (validationError?.errors) {
-        // Show first validation error
-        const firstErrorKey = Object.keys(validationError.errors)[0];
-        const firstErrorMessages = validationError.errors[firstErrorKey];
-        if (firstErrorMessages && firstErrorMessages.length > 0) {
-          toast.error(firstErrorMessages[0]);
-        } else {
-          toast.error(validationError.title || "Validation error occurred");
-        }
-      }
-      return Promise.reject(error);
-    }
-
-    // Handle server errors
-    if (response?.status && response.status >= 500) {
-      toast.error("Server error. Please try again later.");
-    } else {
-      // Extract and show error message
-      const message = extractErrorMessage(error);
-      toast.error(message);
-    }
-
+    // Also, don't show toasts here - let the hooks handle error display
+    // This prevents duplicate toast notifications
     return Promise.reject(error);
   }
 

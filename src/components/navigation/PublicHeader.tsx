@@ -22,7 +22,6 @@ const PublicHeader = () => {
 
   // Navigation links for not signed-in users
   const publicNavLinks = [
-    { label: "How it Works", path: "/#how-it-works" },
     { label: "Browse Projects", path: "/projects" },
     { label: "Find Teams", path: "/teams" },
     { label: "About", path: "/about" },

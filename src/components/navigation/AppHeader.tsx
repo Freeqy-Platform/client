@@ -45,7 +45,7 @@ const AppHeader = () => {
         <div className="flex h-16 items-center justify-between">
           {/* Sidebar Toggle - Only show when sidebar exists */}
           <div className="flex items-center gap-2">
-            {hasSidebar && <SidebarTrigger className="md:inline-flex" />}
+            {hasSidebar && <SidebarTrigger />}
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--purple)] text-[var(--purple-foreground)]">

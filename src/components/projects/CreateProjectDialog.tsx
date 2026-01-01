@@ -42,7 +42,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { projectService } from "@/services/projectService";
-import { ProjectStatus, ProjectVisibility, ProjectStatusLabels, ProjectVisibilityLabels } from "@/types/projects";
+import {
+  ProjectStatus,
+  ProjectVisibility,
+  ProjectStatusLabels,
+  ProjectVisibilityLabels,
+  statusStringToNumber,
+  statusNumberToString,
+  visibilityStringToNumber,
+  visibilityNumberToString,
+} from "@/types/projects";
 import type { Category, Technology, Project } from "@/types/projects";
 import { toast } from "sonner";
 import { Loader2, ChevronDown } from "lucide-react";
@@ -85,11 +94,13 @@ export function CreateProjectDialog({
         if (open) {
             fetchData();
             if (projectToEdit) {
+                // Convert backend string values to form string enum values
+                // Backend returns strings, so we can use them directly
                 form.reset({
                     name: projectToEdit.name,
                     description: projectToEdit.description,
-                    status: projectToEdit.status,
-                    visibility: projectToEdit.visibility,
+                    status: projectToEdit.status, // Already a string enum value
+                    visibility: projectToEdit.visibility, // Already a string enum value
                     technologyIds: projectToEdit.technologies.map(t => t.id),
                     categoryId: projectToEdit.category.id,
                     estimatedTime: projectToEdit.estimatedTime,
@@ -163,11 +174,17 @@ export function CreateProjectDialog({
     const onSubmit = async (values: ProjectFormValues) => {
         try {
             setSubmitting(true);
+            // Convert string enum values to numbers for backend
+            const requestData = {
+                ...values,
+                status: statusStringToNumber(values.status),
+                visibility: visibilityStringToNumber(values.visibility),
+            };
             if (projectToEdit) {
-                await projectService.updateProject(projectToEdit.id, values);
+                await projectService.updateProject(projectToEdit.id, requestData);
                 toast.success("Project updated successfully");
             } else {
-                await projectService.createProject(values);
+                await projectService.createProject(requestData);
                 toast.success("Project created successfully");
             }
             onSuccess();
@@ -268,9 +285,9 @@ export function CreateProjectDialog({
                                         <FormItem>
                                             <FormLabel>Status</FormLabel>
                                             <Select
-                                                onValueChange={(val) => field.onChange(Number(val))}
-                                                defaultValue={field.value?.toString()}
-                                                value={field.value?.toString()}
+                                                onValueChange={field.onChange}
+                                                defaultValue={field.value}
+                                                value={field.value}
                                             >
                                                 <FormControl>
                                                     <SelectTrigger>
@@ -299,9 +316,9 @@ export function CreateProjectDialog({
                                         <FormItem>
                                             <FormLabel>Visibility</FormLabel>
                                             <Select
-                                                onValueChange={(val) => field.onChange(Number(val))}
-                                                defaultValue={field.value?.toString()}
-                                                value={field.value?.toString()}
+                                                onValueChange={field.onChange}
+                                                defaultValue={field.value}
+                                                value={field.value}
                                             >
                                                 <FormControl>
                                                     <SelectTrigger>

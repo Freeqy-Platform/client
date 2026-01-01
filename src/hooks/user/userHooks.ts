@@ -17,6 +17,7 @@ import type {
   UpdatePasswordRequest,
   UsersListQueryParams,
   ConfirmEmailRequest,
+  ResendConfirmEmailRequest,
   UpdateTrackRequest,
   UpdateTrackWithConfirmRequest,
   CreateTrackRequestDto,
@@ -344,6 +345,24 @@ export const useConfirmEmail = () => {
     onError: (error) => {
       const message = extractErrorMessage(error);
       toast.error(message || "Failed to confirm email");
+    },
+  });
+};
+
+/**
+ * POST /api/Users/resend-confirm-email
+ * Resend confirmation email
+ */
+export const useResendConfirmEmail = () => {
+  return useMutation({
+    mutationFn: (data: ResendConfirmEmailRequest) =>
+      userService.resendConfirmEmail(data),
+    onSuccess: () => {
+      toast.success("Confirmation email sent. Please check your inbox.");
+    },
+    onError: (error) => {
+      const message = extractErrorMessage(error);
+      toast.error(message || "Failed to resend confirmation email");
     },
   });
 };

@@ -152,6 +152,10 @@ export interface ConfirmEmailRequest {
   token: string;
 }
 
+export interface ResendConfirmEmailRequest {
+  userId: string;
+}
+
 // Track Types
 export interface Track {
   id: number;
