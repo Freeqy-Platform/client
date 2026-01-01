@@ -4,7 +4,7 @@ export const profileSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
   lastName: z.string().min(2, "Last name must be at least 2 characters"),
   phoneNumber: z.string().optional(),
-  availability: z.string().optional(),
+  availability: z.union([z.literal("1"), z.literal("2"), z.literal("3")]).optional(),
   trackName: z.string().optional(),
 });
 
@@ -19,7 +19,7 @@ export const phoneSchema = z.object({
 });
 
 export const availabilitySchema = z.object({
-  availability: z.string().min(1, "Availability is required"),
+  availability: z.union([z.literal("1"), z.literal("2"), z.literal("3")]),
 });
 
 export const skillsSchema = z.object({

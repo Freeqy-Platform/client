@@ -5,6 +5,7 @@ import { useMe } from "../../hooks/user/userHooks";
 import { TrackRequestForm } from "../../components/profile/TrackRequestForm";
 import { TrackRequestsSection } from "../../components/profile/TrackRequestsSection";
 import { UpdateEmailForm } from "../../components/profile/UpdateEmailForm";
+import { UpdateUsernameForm } from "../../components/profile/UpdateUsernameForm";
 import { ChangePasswordForm } from "../../components/profile/ChangePasswordForm";
 
 const SettingsPage: React.FC = () => {
@@ -49,6 +50,7 @@ const SettingsPage: React.FC = () => {
         </div>
 
         <div className="space-y-6">
+          <UpdateUsernameForm currentUsername={user.userName} />
           <UpdateEmailForm currentEmail={user.email} />
           <ChangePasswordForm />
           <TrackRequestForm />

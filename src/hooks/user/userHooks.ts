@@ -63,12 +63,17 @@ export const useUpdateProfile = () => {
 
       // Optimistically update cache
       if (previousUser) {
+        // Convert API string availability ("1", "2", "3") to status string for User type
+        const availabilityString = newData.availability !== undefined && newData.availability !== null
+          ? (newData.availability === "1" ? "Available" : newData.availability === "2" ? "Busy" : "DoNotDisturb")
+          : previousUser.availability;
+        
         const optimisticUser: User = {
           ...previousUser,
           firstName: newData.firstName,
           lastName: newData.lastName,
           phoneNumber: newData.phoneNumber || previousUser.phoneNumber,
-          availability: newData.availability || previousUser.availability,
+          availability: availabilityString,
           track: newData.trackName || previousUser.track,
         };
 
@@ -427,7 +432,7 @@ export const useUpdateUsername = () => {
       if (previousUser) {
         const optimisticUser: User = {
           ...previousUser,
-          userName: newData.userName,
+          userName: newData.NewUsername,
         };
         queryClient.setQueryData([QUERY_KEYS.auth.user, "me"], optimisticUser);
       }

@@ -161,3 +161,12 @@ export interface ChangeProjectStatusRequest {
 export interface UpdateMemberRoleRequest {
   role: string;
 }
+
+// Paginated Response Types
+export interface PaginatedProjectsResponse {
+  items: Project[];
+  pageNumber: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+}

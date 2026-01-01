@@ -8,13 +8,34 @@ import type {
     ChangeProjectStatusRequest,
     ProjectMember,
     UpdateMemberRoleRequest,
-    ProjectVisibility // Kept to match imports, though might be unused here
+    ProjectVisibility, // Kept to match imports, though might be unused here
+    PaginatedProjectsResponse
 } from "@/types/projects";
 
 export const projectService = {
     // Projects
-    getProjects: async (filter?: ProjectFilter) => {
-        return apiClient.get<Project[]>("/Projects", { params: filter });
+    getProjects: async (filter?: ProjectFilter): Promise<PaginatedProjectsResponse> => {
+        const response = await apiClient.get<PaginatedProjectsResponse>("/Projects", { params: filter });
+        
+        // Handle case where backend might return array directly (backward compatibility)
+        if (Array.isArray(response)) {
+            return {
+                items: response,
+                pageNumber: filter?.pageNumber || 1,
+                totalPages: 1,
+                hasPreviousPage: false,
+                hasNextPage: false,
+            };
+        }
+        
+        // Ensure response has required fields
+        return {
+            items: response.items || [],
+            pageNumber: response.pageNumber || filter?.pageNumber || 1,
+            totalPages: response.totalPages || 1,
+            hasPreviousPage: response.hasPreviousPage || false,
+            hasNextPage: response.hasNextPage || false,
+        };
     },
 
     getProject: async (id: string) => {

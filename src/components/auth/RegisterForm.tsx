@@ -54,9 +54,7 @@ export const RegisterForm = () => {
   });
 
   const onSubmit = async (data: RegisterFormData) => {
-    // Extract only the fields needed for the API request
-    // agreeToTerms is only for frontend validation
-    const { agreeToTerms, ...registerData } = data;
+    const { ...registerData } = data;
 
     console.log("DEBUG: Attempting registration with:", registerData);
 

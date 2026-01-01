@@ -25,6 +25,7 @@ import UserProfilePage from "@/pages/users/UserProfilePage";
 import ProjectsList from "@/pages/projects/ProjectsList";
 import ProjectDetails from "@/pages/projects/ProjectDetails";
 import MyProjectsPage from "@/pages/projects/MyProjectsPage";
+import StarredProjectsPage from "@/pages/projects/StarredProjectsPage";
 import AIAnalysisPage from "@/pages/projects/AIAnalysisPage";
 import UsersListPage from "@/pages/users/UsersListPage";
 import { AuthLayout } from "@/components/auth/AuthLayout";
@@ -62,6 +63,7 @@ const MainRouter = () => {
         <Route path="/messages" element={<Messages />} />
         <Route path="/projects" element={<ProjectsList />} />
         <Route path="/projects/my" element={<MyProjectsPage />} />
+        <Route path="/projects/starred" element={<StarredProjectsPage />} />
         <Route path="/projects/analyze" element={<AIAnalysisPage />} />
         <Route path="/projects/:projectId" element={<ProjectDetails />} />
         <Route path="/confirm-email" element={<ConfirmEmailPage />} />

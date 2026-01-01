@@ -42,7 +42,11 @@ import { Skeleton } from "../components/ui/skeleton";
 import { User, X, Upload } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { setFormErrors } from "../lib/form-error-handler";
-import type { Skill } from "../types/user";
+import type { Skill, UpdateUserProfileRequest } from "../types/user";
+import {
+  availabilityStatusToString,
+  getAvailabilityLabel,
+} from "../lib/utils/availabilityUtils";
 
 // Form schemas
 const profileSchema = z.object({
@@ -50,7 +54,7 @@ const profileSchema = z.object({
   lastName: z.string().min(2, "Last name must be at least 2 characters"),
   phoneNumber: z.string().optional(),
   summary: z.string().optional(),
-  availability: z.string().optional(),
+  availability: z.union([z.literal("1"), z.literal("2"), z.literal("3")]).optional(),
   track: z.string().optional(),
 });
 
@@ -102,7 +106,7 @@ const EditProfilePage: React.FC = () => {
       lastName: user?.lastName || "",
       phoneNumber: user?.phoneNumber || "",
       summary: user?.summary || "",
-      availability: user?.availability || "",
+      availability: availabilityStatusToString(user?.availability),
       track: user?.track || "",
     },
   });
@@ -141,7 +145,7 @@ const EditProfilePage: React.FC = () => {
         lastName: user.lastName || "",
         phoneNumber: user.phoneNumber || "",
         summary: user.summary || "",
-        availability: user.availability || "",
+        availability: availabilityStatusToString(user.availability),
         track: user.track || "",
       });
       usernameForm.reset({
@@ -187,7 +191,15 @@ const EditProfilePage: React.FC = () => {
   // Form handlers
   const onProfileSubmit = async (data: ProfileFormData) => {
     try {
-      await updateProfile.mutateAsync(data);
+      // Convert form data to UpdateUserProfileRequest format
+      const updateData: UpdateUserProfileRequest = {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phoneNumber: data.phoneNumber,
+        availability: data.availability,
+        trackName: data.track,
+      };
+      await updateProfile.mutateAsync(updateData);
     } catch (error) {
       setFormErrors(error, profileForm.setError);
     }
@@ -195,9 +207,12 @@ const EditProfilePage: React.FC = () => {
 
   const onUsernameSubmit = async (data: UsernameFormData) => {
     try {
-      await updateUsername.mutateAsync(data);
+      await updateUsername.mutateAsync({
+        NewUsername: data.userName,
+      });
     } catch (error) {
-      setFormErrors(error, usernameForm.setError);
+      // Map API field name "NewUsername" to form field "userName"
+      setFormErrors(error, usernameForm.setError, { NewUsername: "userName" });
     }
   };
 
@@ -413,7 +428,9 @@ const EditProfilePage: React.FC = () => {
                   <FormItem>
                     <FormLabel>Availability</FormLabel>
                     <Select
-                      onValueChange={field.onChange}
+                      onValueChange={(value) => {
+                        field.onChange(value || undefined);
+                      }}
                       value={field.value || ""}
                     >
                       <FormControl>
@@ -422,9 +439,9 @@ const EditProfilePage: React.FC = () => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="Available">Available</SelectItem>
-                        <SelectItem value="Busy">Busy</SelectItem>
-                        <SelectItem value="NotAvailable">Not Available</SelectItem>
+                        <SelectItem value="1">Available</SelectItem>
+                        <SelectItem value="2">Busy</SelectItem>
+                        <SelectItem value="3">Do Not Disturb</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

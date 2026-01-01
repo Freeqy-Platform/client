@@ -55,12 +55,12 @@ export const userService = {
       lastName: data.lastName,
     };
 
-    // Only include optional fields if they have a value (not empty string)
+    // Only include optional fields if they have a value
     if (data.phoneNumber && data.phoneNumber.trim()) {
       requestData.phoneNumber = data.phoneNumber.trim();
     }
-    if (data.availability && data.availability.trim()) {
-      requestData.availability = data.availability.trim();
+    if (data.availability !== undefined && data.availability !== null) {
+      requestData.availability = data.availability;
     }
     if (data.trackName && data.trackName.trim()) {
       requestData.trackName = data.trackName.trim();
@@ -159,7 +159,10 @@ export const userService = {
   },
 
   updateUsername: async (data: UpdateUsernameRequest): Promise<void> => {
-    await apiClient.put("/Users/me/username", data);
+    // Map userName to NewUsername for API compatibility
+    await apiClient.put("/Users/me/username", {
+      NewUsername: data.NewUsername,
+    });
   },
 
   updatePhoneNumber: async (data: UpdatePhoneNumberRequest): Promise<void> => {

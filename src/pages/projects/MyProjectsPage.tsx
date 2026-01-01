@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { projectService } from "@/services/projectService";
+import { useSearchParams } from "react-router-dom";
 import type { Project } from "@/types/projects";
 import { ProjectCard } from "@/components/projects/ProjectCard";
 import { CreateProjectDialog } from "@/components/projects/CreateProjectDialog";
+import { Pagination } from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -14,15 +15,12 @@ import {
 } from "@/components/ui/select";
 import { Plus, Search, Loader2 } from "lucide-react";
 import { useDebounce } from "@/hooks/use-debounce";
-import { toast } from "sonner";
-import { ProjectStatus } from "@/types/projects";
+import { ProjectStatus, statusStringToNumber } from "@/types/projects";
 import { useMe } from "@/hooks/user/userHooks";
+import { usePaginatedProjects } from "@/hooks/projects/usePaginatedProjects";
 
 export default function MyProjectsPage() {
   const { data: currentUser, isLoading: userLoading } = useMe();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
 
   // Filters
@@ -30,91 +28,69 @@ export default function MyProjectsPage() {
   const debouncedSearch = useDebounce(search, 500);
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
 
-  useEffect(() => {
-    if (currentUser?.id) {
-      fetchProjects();
-    }
-  }, [currentUser?.id]);
+  // Build filter object - note: backend filtering by owner happens server-side
+  // We'll filter client-side for owner match as fallback
+  const filter: {
+    status?: number;
+  } = {};
 
-  useEffect(() => {
-    if (projects.length > 0) {
-      filterProjects();
-    }
-  }, [debouncedSearch, selectedStatus, projects]);
-
-  const fetchProjects = async () => {
-    if (!currentUser?.id) return;
-
-    try {
-      setLoading(true);
-
-      // Add timeout safeguard
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Request timed out")), 8000)
-      );
-
-      const response = await Promise.race([
-        projectService.getProjects(),
-        timeoutPromise,
-      ]);
-
-      // Handle potential wrapped response
-      // @ts-ignore - Safe handling of unknown structure
-      const data = Array.isArray(response)
-        ? response
-        : response?.projects || response?.items || response?.value || [];
-
-      if (!Array.isArray(data)) {
-        console.error("Unexpected project data format:", response);
-        setProjects([]);
-      } else {
-        // Filter to only show projects owned by current user
-        const myProjects = data.filter(
-          (project) => project.owner.id === currentUser.id
-        );
-        setProjects(myProjects);
-      }
-    } catch (error) {
-      console.error("Failed to fetch projects", error);
-      toast.error("Failed to load projects. Ensure backend is running.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filterProjects = () => {
-    let filtered = [...projects];
-
-    // Filter by search term (project name or description)
-    if (debouncedSearch) {
-      const searchLower = debouncedSearch.toLowerCase();
-      filtered = filtered.filter(
-        (project) =>
-          project.name.toLowerCase().includes(searchLower) ||
-          project.description.toLowerCase().includes(searchLower)
-      );
-    }
-
-    // Filter by status
-    if (selectedStatus && selectedStatus !== "all") {
-      filtered = filtered.filter(
-        (project) => project.status === selectedStatus
-      );
-    }
-
-    setFilteredProjects(filtered);
-  };
-
-  if (userLoading || loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+  if (selectedStatus && selectedStatus !== "all") {
+    filter.status = statusStringToNumber(selectedStatus as ProjectStatus);
   }
 
-  const displayProjects =
-    filteredProjects.length > 0 ? filteredProjects : projects;
+  // Use paginated projects hook
+  const {
+    projects,
+    pageNumber,
+    totalPages,
+    hasNextPage,
+    hasPreviousPage,
+    isLoading,
+    isFetching,
+    isPlaceholderData,
+    goToPage,
+    setPageSize,
+    pageSize,
+  } = usePaginatedProjects(filter);
+
+  // Debug: Log pagination data
+  useEffect(() => {
+    if (projects.length > 0 || totalPages > 0) {
+      console.log("My Projects Pagination Debug:", {
+        projectsCount: projects.length,
+        pageNumber,
+        totalPages,
+        hasNextPage,
+        hasPreviousPage,
+      });
+    }
+  }, [projects.length, pageNumber, totalPages, hasNextPage, hasPreviousPage]);
+
+  // Filter to only show projects owned by current user
+  // Note: Ideally this should be done server-side, but we filter client-side as fallback
+  const myProjects = currentUser?.id
+    ? projects.filter((project) => project.owner.id === currentUser.id)
+    : [];
+
+  // Client-side filtering for search (since backend may not support it)
+  const filteredProjects = myProjects.filter((project) => {
+    if (debouncedSearch) {
+      const searchLower = debouncedSearch.toLowerCase();
+      return (
+        project.name.toLowerCase().includes(searchLower) ||
+        project.description.toLowerCase().includes(searchLower)
+      );
+    }
+    return true;
+  });
+
+  const handleProjectCreated = () => {
+    // Reset to first page and refetch
+    goToPage(1);
+  };
+
+  // Show loading state only on initial load, not when fetching cached pages
+  const showLoading = (isLoading || userLoading) && !isPlaceholderData;
 
   return (
     <div className="container px-6 mx-auto py-8 space-y-8">
@@ -138,12 +114,21 @@ export default function MyProjectsPage() {
             placeholder="Search projects..."
             className="pl-9"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              // Note: Search is client-side, so we don't reset pagination
+            }}
           />
         </div>
 
         <div className="flex gap-2 w-full md:w-auto flex-wrap">
-          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+          <Select
+            value={selectedStatus}
+            onValueChange={(value) => {
+              setSelectedStatus(value);
+              goToPage(1); // Reset to page 1 when filter changes
+            }}
+          >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -159,11 +144,12 @@ export default function MyProjectsPage() {
         </div>
       </div>
 
-      {loading ? (
+      {/* Loading State */}
+      {showLoading ? (
         <div className="flex justify-center items-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      ) : displayProjects.length === 0 ? (
+      ) : filteredProjects.length === 0 ? (
         <div className="text-center py-12 border rounded-xl bg-muted/20 border-dashed">
           <h3 className="text-lg font-semibold">No projects found</h3>
           <p className="text-muted-foreground mt-1 mb-4">
@@ -176,21 +162,62 @@ export default function MyProjectsPage() {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {displayProjects.map((project) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              onDelete={fetchProjects}
-            />
-          ))}
-        </div>
+        <>
+          {/* Subtle loading indicator when fetching cached pages */}
+          {isFetching && isPlaceholderData && (
+            <div className="flex justify-center items-center py-2">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredProjects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                onDelete={handleProjectCreated}
+              />
+            ))}
+          </div>
+
+          {/* Pagination - Always show if we have projects or pagination data */}
+          {(filteredProjects.length > 0 || totalPages > 0) && (
+            <div className="flex flex-col gap-4 pt-8 mt-8 border-t">
+              {totalPages > 0 ? (
+                <>
+                  <Pagination
+                    currentPage={pageNumber}
+                    totalPages={totalPages}
+                    onPageChange={goToPage}
+                    hasNextPage={hasNextPage}
+                    hasPreviousPage={hasPreviousPage}
+                    isLoading={isFetching}
+                    pageSize={pageSize}
+                    onPageSizeChange={setPageSize}
+                  />
+                  <p className="text-sm text-muted-foreground text-center">
+                    Page {pageNumber} of {totalPages}
+                    {filteredProjects.length > 0 && (
+                      <span className="ml-2">
+                        • {filteredProjects.length} {filteredProjects.length === 1 ? "project" : "projects"} on this page
+                      </span>
+                    )}
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center">
+                  Showing {filteredProjects.length} {filteredProjects.length === 1 ? "project" : "projects"}
+                </p>
+              )}
+            </div>
+          )}
+        </>
       )}
 
       <CreateProjectDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        onSuccess={fetchProjects}
+        onSuccess={handleProjectCreated}
       />
     </div>
   );

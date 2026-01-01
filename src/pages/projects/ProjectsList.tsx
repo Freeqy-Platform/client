@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { projectService } from "@/services/projectService";
-import type { Project, Category, Technology } from "@/types/projects";
+import type { Category, Technology } from "@/types/projects";
 import { ProjectCard } from "@/components/projects/ProjectCard";
 import { CreateProjectDialog } from "@/components/projects/CreateProjectDialog";
+import { Pagination } from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,14 +17,14 @@ import { Plus, Search, Loader2, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useDebounce } from "@/hooks/use-debounce";
 import { toast } from "sonner";
-import { ProjectStatus, ProjectVisibility } from "@/types/projects";
+import { ProjectStatus, ProjectVisibility, statusStringToNumber } from "@/types/projects";
 import { useMe } from "@/hooks/user/userHooks";
+import { usePaginatedProjects } from "@/hooks/projects/usePaginatedProjects";
+import { projectService } from "@/services/projectService";
 
 export default function ProjectsList() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: currentUser } = useMe();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
   const [technologies, setTechnologies] = useState<Technology[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
@@ -35,13 +35,67 @@ export default function ProjectsList() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
 
+  // Build filter object for paginated query
+  const filter: {
+    Category?: string;
+    status?: number;
+  } = {};
+
+  // Backend supports Category (category name search)
+  // Combine search and category filter - both use Category parameter
+  const categoryFilter =
+    selectedCategory && selectedCategory !== "all"
+      ? selectedCategory
+      : debouncedSearch;
+  if (categoryFilter) filter.Category = categoryFilter;
+  if (selectedStatus && selectedStatus !== "all") {
+    filter.status = statusStringToNumber(selectedStatus as ProjectStatus);
+  }
+
+  // Use paginated projects hook
+  const {
+    projects,
+    pageNumber,
+    totalPages,
+    hasNextPage,
+    hasPreviousPage,
+    isLoading,
+    isFetching,
+    isPlaceholderData,
+    goToPage,
+    setPageSize,
+    pageSize,
+  } = usePaginatedProjects(filter);
+
+  // Debug: Log pagination data
+  useEffect(() => {
+    if (projects.length > 0 || totalPages > 0) {
+      console.log("Pagination Debug:", {
+        projectsCount: projects.length,
+        pageNumber,
+        totalPages,
+        hasNextPage,
+        hasPreviousPage,
+      });
+    }
+  }, [projects.length, pageNumber, totalPages, hasNextPage, hasPreviousPage]);
+
+  // Filter projects client-side for visibility (public/private)
+  const visibleProjects = projects.filter((project) => {
+    // Show public projects to everyone
+    if (project.visibility === ProjectVisibility.Public) {
+      return true;
+    }
+    // Show private projects only to their owner
+    if (project.visibility === ProjectVisibility.Private) {
+      return currentUser?.id === project.owner.id;
+    }
+    return false;
+  });
+
   useEffect(() => {
     fetchMetadata();
   }, []);
-
-  useEffect(() => {
-    fetchProjects();
-  }, [debouncedSearch, selectedCategory, selectedStatus]);
 
   // Check for create query parameter and open dialog
   useEffect(() => {
@@ -61,8 +115,6 @@ export default function ProjectsList() {
         projectService.getCategories(),
         projectService.getTechnologies(),
       ]);
-      // console.log("DEBUG: Categories loaded:", cats);
-      // console.log("DEBUG: Technologies loaded:", techs);
       setCategories(cats || []);
       setTechnologies(techs || []);
     } catch (error) {
@@ -70,64 +122,14 @@ export default function ProjectsList() {
     }
   };
 
-  const fetchProjects = async () => {
-    try {
-      setLoading(true);
-      const filter: any = {};
-
-      // Backend supports Category (category name search)
-      // Combine search and category filter - both use Category parameter
-      const categoryFilter =
-        selectedCategory && selectedCategory !== "all"
-          ? selectedCategory
-          : debouncedSearch;
-      if (categoryFilter) filter.Category = categoryFilter;
-      if (selectedStatus && selectedStatus !== "all")
-        filter.status = selectedStatus;
-
-      // Add timeout safeguard
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Request timed out")), 8000)
-      );
-
-      const response = await Promise.race([
-        projectService.getProjects(filter),
-        timeoutPromise,
-      ]);
-
-      // console.log("DEBUG: Raw Projects Response:", response); // Debugging line
-
-      // Handle potential wrapped response (e.g. { projects: [...] }, PaginatedList or Result wrapper)
-      // @ts-ignore - Safe handling of unknown structure
-      const data = Array.isArray(response)
-        ? response
-        : response?.projects || response?.items || response?.value || [];
-
-      if (!Array.isArray(data)) {
-        console.error("Unexpected project data format:", response);
-        setProjects([]);
-      } else {
-        // Filter out private projects that don't belong to current user
-        const filteredProjects = data.filter((project) => {
-          // Show public projects to everyone
-          if (project.visibility === ProjectVisibility.Public) {
-            return true;
-          }
-          // Show private projects only to their owner
-          if (project.visibility === ProjectVisibility.Private) {
-            return currentUser?.id === project.owner.id;
-          }
-          return false;
-        });
-        setProjects(filteredProjects);
-      }
-    } catch (error) {
-      console.error("Failed to fetch projects", error);
-      toast.error("Failed to load projects. Ensure backend is running.");
-    } finally {
-      setLoading(false);
-    }
+  const handleProjectCreated = () => {
+    // Reset to first page and refetch
+    goToPage(1);
   };
+
+  // Show loading state only on initial load, not when fetching cached pages
+  const showLoading = isLoading && !isPlaceholderData;
+
   return (
     <div className="container px-6 mx-auto py-8 space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -158,7 +160,11 @@ export default function ProjectsList() {
             placeholder="Search by category name..."
             className="pl-9"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              // Reset to page 1 when search changes
+              goToPage(1);
+            }}
           />
         </div>
 
@@ -167,6 +173,7 @@ export default function ProjectsList() {
             value={selectedCategory}
             onValueChange={(value) => {
               setSelectedCategory(value);
+              goToPage(1); // Reset to page 1 when filter changes
             }}
           >
             <SelectTrigger className="w-[180px]">
@@ -188,7 +195,13 @@ export default function ProjectsList() {
             </SelectContent>
           </Select>
 
-          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+          <Select
+            value={selectedStatus}
+            onValueChange={(value) => {
+              setSelectedStatus(value);
+              goToPage(1); // Reset to page 1 when filter changes
+            }}
+          >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -204,11 +217,12 @@ export default function ProjectsList() {
         </div>
       </div>
 
-      {loading ? (
+      {/* Loading State */}
+      {showLoading ? (
         <div className="flex justify-center items-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      ) : projects.length === 0 ? (
+      ) : visibleProjects.length === 0 ? (
         <div className="text-center py-12 border rounded-xl bg-muted/20 border-dashed">
           <h3 className="text-lg font-semibold">No projects found</h3>
           <p className="text-muted-foreground mt-1 mb-4">
@@ -219,21 +233,62 @@ export default function ProjectsList() {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              onDelete={fetchProjects}
-            />
-          ))}
-        </div>
+        <>
+          {/* Subtle loading indicator when fetching cached pages */}
+          {isFetching && isPlaceholderData && (
+            <div className="flex justify-center items-center py-2">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {visibleProjects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                onDelete={handleProjectCreated}
+              />
+            ))}
+          </div>
+
+          {/* Pagination - Always show if we have projects or pagination data */}
+          {(visibleProjects.length > 0 || totalPages > 0) && (
+            <div className="flex flex-col gap-4 pt-8 mt-8 border-t">
+              {totalPages > 0 ? (
+                <>
+                  <Pagination
+                    currentPage={pageNumber}
+                    totalPages={totalPages}
+                    onPageChange={goToPage}
+                    hasNextPage={hasNextPage}
+                    hasPreviousPage={hasPreviousPage}
+                    isLoading={isFetching}
+                    pageSize={pageSize}
+                    onPageSizeChange={setPageSize}
+                  />
+                  <p className="text-sm text-muted-foreground text-center">
+                    Page {pageNumber} of {totalPages}
+                    {visibleProjects.length > 0 && (
+                      <span className="ml-2">
+                        • {visibleProjects.length} {visibleProjects.length === 1 ? "project" : "projects"} on this page
+                      </span>
+                    )}
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center">
+                  Showing {visibleProjects.length} {visibleProjects.length === 1 ? "project" : "projects"}
+                </p>
+              )}
+            </div>
+          )}
+        </>
       )}
 
       <CreateProjectDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        onSuccess={fetchProjects}
+        onSuccess={handleProjectCreated}
       />
     </div>
   );

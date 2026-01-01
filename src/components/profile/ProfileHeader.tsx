@@ -3,7 +3,12 @@ import { Card, CardContent, CardHeader } from "../ui/card";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { Mail, Phone, Calendar, MapPin, CheckCircle2, Edit, Loader2 } from "lucide-react";
-import { getAvailabilityColor } from "../../lib/utils/availabilityUtils";
+import {
+  getAvailabilityColor,
+  getAvailabilityLabel,
+  availabilityStatusToString,
+  availabilityStringToStatus,
+} from "../../lib/utils/availabilityUtils";
 import {
   Dialog,
   DialogContent,
@@ -48,7 +53,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       firstName: user.firstName || "",
       lastName: user.lastName || "",
       phoneNumber: user.phoneNumber || "",
-      availability: user.availability || "",
+      availability: availabilityStatusToString(user.availability),
       trackName: user.track || "",
     },
   });
@@ -60,7 +65,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         firstName: user.firstName || "",
         lastName: user.lastName || "",
         phoneNumber: user.phoneNumber || "",
-        availability: user.availability || "",
+        availability: availabilityStatusToString(user.availability),
         trackName: user.track || "",
       });
     }
@@ -158,7 +163,9 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                       <FormItem>
                         <FormLabel className="text-sm">Availability</FormLabel>
                         <Select
-                          onValueChange={field.onChange}
+                          onValueChange={(value) => {
+                            field.onChange(value || undefined);
+                          }}
                           value={field.value || ""}
                         >
                           <FormControl>
@@ -167,9 +174,9 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Available">Available</SelectItem>
-                            <SelectItem value="Busy">Busy</SelectItem>
-                            <SelectItem value="NotAvailable">Not Available</SelectItem>
+                            <SelectItem value="1">Available</SelectItem>
+                            <SelectItem value="2">Busy</SelectItem>
+                            <SelectItem value="3">Do Not Disturb</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -247,7 +254,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 variant="outline"
                 className={`text-xs font-normal ${getAvailabilityColor(user.availability)}`}
               >
-                {user.availability === "NotAvailable" ? "Not Available" : user.availability}
+                {getAvailabilityLabel(user.availability)}
               </Badge>
             </div>
           )}

@@ -61,7 +61,7 @@ export interface UpdateUserProfileRequest {
   firstName: string;
   lastName: string;
   phoneNumber?: string;
-  availability?: string;
+  availability?: string; // "1" = Available, "2" = Busy, "3" = DoNotDisturb
   trackName?: string;
 }
 
@@ -107,7 +107,7 @@ export interface UpdateCertificatesRequest {
 }
 
 export interface UpdateUsernameRequest {
-  userName: string;
+  NewUsername: string;
 }
 
 export interface UpdatePhoneNumberRequest {
@@ -119,7 +119,7 @@ export interface UpdateSummaryRequest {
 }
 
 export interface UpdateAvailabilityRequest {
-  availability: string;
+  availability: string; // "1" = Available, "2" = Busy, "3" = DoNotDisturb
 }
 
 export interface UpdateEmailRequest {
