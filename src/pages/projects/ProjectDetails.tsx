@@ -9,6 +9,7 @@ import {
 } from "@/types/projects";
 import type { Project } from "@/types/projects";
 import { CreateProjectDialog } from "@/components/projects/CreateProjectDialog";
+import { InviteMembersDialog } from "@/components/projects/InviteMembersDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -21,6 +22,7 @@ import {
   ArrowLeft,
   Edit,
   Trash2,
+  UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMe } from "@/hooks/user/userHooks";
@@ -54,6 +56,7 @@ export default function ProjectDetails() {
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -159,7 +162,11 @@ export default function ProjectDetails() {
           </div>
         </div>
         {isOwner && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" onClick={() => setInviteOpen(true)}>
+              <UserPlus className="mr-2 h-4 w-4" />
+              Invite Members
+            </Button>
             <Button onClick={() => setEditOpen(true)}>
               <Edit className="mr-2 h-4 w-4" />
               Edit Project
@@ -240,6 +247,13 @@ export default function ProjectDetails() {
         onOpenChange={setEditOpen}
         onSuccess={() => fetchProject(project.id)}
         projectToEdit={project}
+      />
+
+      <InviteMembersDialog
+        projectId={project.id}
+        projectName={project.name}
+        open={inviteOpen}
+        onOpenChange={setInviteOpen}
       />
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
